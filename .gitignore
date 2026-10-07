@@ -1,0 +1,12 @@
+node_modules
+.next
+out
+.env
+.env.local
+.env.*.local
+generated
+*.tsbuildinfo
+next-env.d.ts
+.vercel
+coverage
+public/monaco

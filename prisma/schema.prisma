@@ -1,0 +1,263 @@
+// VibeDecoder: esquema de base de datos (PostgreSQL).
+// Prisma 7: la URL de conexión vive en prisma.config.ts, no aquí.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Nivel {
+  PRINCIPIANTE
+  INTERMEDIO
+  AVANZADO
+}
+
+enum EstadoAnalisis {
+  PENDIENTE
+  PROCESANDO
+  COMPLETO
+  ERROR
+}
+
+enum TipoDiagrama {
+  FLUJO
+  CLASES
+  SECUENCIA
+}
+
+enum TipoHallazgo {
+  SEGURIDAD
+  MALA_PRACTICA
+  CODIGO_MUERTO
+  MANEJO_ERRORES
+  ALUCINACION
+}
+
+enum Severidad {
+  BAJA
+  MEDIA
+  ALTA
+  CRITICA
+}
+
+enum TipoPregunta {
+  OPCION_MULTIPLE
+  QUE_IMPRIME
+  VERDADERO_FALSO
+  QUE_PASA_SI
+  ORDENAR
+}
+
+enum RolChat {
+  USUARIO
+  ASISTENTE
+}
+
+model Usuario {
+  id           String   @id @default(cuid())
+  nombre       String?
+  email        String   @unique
+  passwordHash String?
+  githubId     String?  @unique
+  imagen       String?
+  nivel        Nivel    @default(INTERMEDIO)
+  creadoEn     DateTime @default(now())
+
+  analisis Analisis[]
+  intentos IntentoQuiz[]
+  mensajes MensajeChat[]
+  usos     UsoDiario[]
+
+  @@map("usuarios")
+}
+
+model Analisis {
+  id             String         @id @default(cuid())
+  usuarioId      String
+  titulo         String
+  codigo         String         @db.Text
+  lenguaje       String
+  /// SHA-256 del código normalizado + nivel (clave de caché, se usa en la Fase 2)
+  hash           String
+  nivel          Nivel
+  estado         EstadoAnalisis @default(PENDIENTE)
+  /// { proposito, entradas[], salidas[], dependencias[] }
+  resumen        Json?
+  errorMensaje   String?
+  modelo         String?
+  versionPrompts String?
+  /// Token del enlace público de solo lectura (Fase 3)
+  tokenPublico   String?        @unique
+  creadoEn       DateTime       @default(now())
+  actualizadoEn  DateTime       @updatedAt
+
+  usuario       Usuario             @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  explicaciones ExplicacionLinea[]
+  conceptos     Concepto[]
+  diagramas     Diagrama[]
+  hallazgos     HallazgoAuditoria[]
+  quizzes       Quiz[]
+  mensajes      MensajeChat[]
+
+  @@index([hash, nivel])
+  @@index([usuarioId, creadoEn])
+  @@map("analisis")
+}
+
+model ExplicacionLinea {
+  id          String @id @default(cuid())
+  analisisId  String
+  orden       Int
+  lineaInicio Int
+  lineaFin    Int
+  titulo      String
+  explicacion String @db.Text
+
+  analisis Analisis @relation(fields: [analisisId], references: [id], onDelete: Cascade)
+
+  @@index([analisisId, orden])
+  @@map("explicaciones_linea")
+}
+
+model Concepto {
+  id          String @id @default(cuid())
+  analisisId  String
+  nombre      String
+  explicacion String @db.Text
+  lineaInicio Int?
+  lineaFin    Int?
+
+  analisis Analisis @relation(fields: [analisisId], references: [id], onDelete: Cascade)
+
+  @@index([analisisId])
+  @@map("conceptos")
+}
+
+model Diagrama {
+  id            String       @id @default(cuid())
+  analisisId    String
+  tipo          TipoDiagrama
+  titulo        String
+  codigoMermaid String       @db.Text
+  creadoEn      DateTime     @default(now())
+
+  analisis Analisis @relation(fields: [analisisId], references: [id], onDelete: Cascade)
+
+  @@unique([analisisId, tipo])
+  @@map("diagramas")
+}
+
+model HallazgoAuditoria {
+  id          String       @id @default(cuid())
+  analisisId  String
+  tipo        TipoHallazgo
+  severidad   Severidad
+  titulo      String
+  descripcion String       @db.Text
+  sugerencia  String       @db.Text
+  lineaInicio Int?
+  lineaFin    Int?
+
+  analisis Analisis @relation(fields: [analisisId], references: [id], onDelete: Cascade)
+
+  @@index([analisisId])
+  @@map("hallazgos_auditoria")
+}
+
+model Quiz {
+  id         String   @id @default(cuid())
+  analisisId String
+  creadoEn   DateTime @default(now())
+
+  analisis  Analisis     @relation(fields: [analisisId], references: [id], onDelete: Cascade)
+  preguntas Pregunta[]
+  intentos  IntentoQuiz[]
+
+  @@index([analisisId])
+  @@map("quizzes")
+}
+
+model Pregunta {
+  id                String       @id @default(cuid())
+  quizId            String
+  orden             Int
+  tipo              TipoPregunta
+  enunciado         String       @db.Text
+  opciones          Json?
+  respuestaCorrecta Json
+  explicacion       String       @db.Text
+  lineaInicio       Int?
+  lineaFin          Int?
+  concepto          String?
+
+  quiz       Quiz               @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  respuestas RespuestaUsuario[]
+
+  @@index([quizId, orden])
+  @@map("preguntas")
+}
+
+model IntentoQuiz {
+  id               String   @id @default(cuid())
+  quizId           String
+  usuarioId        String
+  aciertos         Int
+  total            Int
+  porcentaje       Float
+  nivelComprension String
+  creadoEn         DateTime @default(now())
+
+  quiz       Quiz               @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  usuario    Usuario            @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  respuestas RespuestaUsuario[]
+
+  @@index([usuarioId, creadoEn])
+  @@map("intentos_quiz")
+}
+
+model RespuestaUsuario {
+  id         String  @id @default(cuid())
+  intentoId  String
+  preguntaId String
+  respuesta  Json
+  correcta   Boolean
+
+  intento  IntentoQuiz @relation(fields: [intentoId], references: [id], onDelete: Cascade)
+  pregunta Pregunta    @relation(fields: [preguntaId], references: [id], onDelete: Cascade)
+
+  @@unique([intentoId, preguntaId])
+  @@map("respuestas_usuario")
+}
+
+model MensajeChat {
+  id          String   @id @default(cuid())
+  analisisId  String
+  usuarioId   String
+  rol         RolChat
+  contenido   String   @db.Text
+  lineaInicio Int?
+  lineaFin    Int?
+  creadoEn    DateTime @default(now())
+
+  analisis Analisis @relation(fields: [analisisId], references: [id], onDelete: Cascade)
+  usuario  Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@index([analisisId, creadoEn])
+  @@map("mensajes_chat")
+}
+
+model UsoDiario {
+  id        String   @id @default(cuid())
+  usuarioId String
+  fecha     DateTime @db.Date
+  cantidad  Int      @default(0)
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@unique([usuarioId, fecha])
+  @@map("uso_diario")
+}

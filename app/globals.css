@@ -1,0 +1,102 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Tokens de color (estilo shadcn/ui). El modo oscuro es el predeterminado: <html class="dark">. */
+@layer base {
+  :root {
+    --background: 0 0% 99%;
+    --foreground: 224 30% 12%;
+    --card: 0 0% 100%;
+    --card-foreground: 224 30% 12%;
+    --primary: 262 83% 58%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 220 16% 94%;
+    --secondary-foreground: 224 30% 20%;
+    --muted: 220 16% 94%;
+    --muted-foreground: 220 9% 40%;
+    --accent: 190 85% 36%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 72% 50%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 220 14% 88%;
+    --input: 220 14% 86%;
+    --ring: 262 83% 58%;
+    --radius: 0.6rem;
+  }
+
+  .dark {
+    --background: 225 27% 7%;
+    --foreground: 210 20% 94%;
+    --card: 225 24% 10%;
+    --card-foreground: 210 20% 94%;
+    --primary: 262 90% 68%;
+    --primary-foreground: 225 27% 8%;
+    --secondary: 223 20% 15%;
+    --secondary-foreground: 210 20% 92%;
+    --muted: 223 20% 14%;
+    --muted-foreground: 215 14% 66%;
+    --accent: 189 90% 58%;
+    --accent-foreground: 225 27% 8%;
+    --destructive: 0 75% 62%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 223 18% 19%;
+    --input: 223 18% 22%;
+    --ring: 262 90% 68%;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  html {
+    color-scheme: light;
+  }
+  html.dark {
+    color-scheme: dark;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  :focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+  }
+}
+
+/* Resaltado sincronizado en Monaco (línea completa + marca en el margen). */
+.vd-hl-line {
+  background: hsl(var(--primary) / 0.16);
+}
+.vd-hl-gutter {
+  border-left: 3px solid hsl(var(--primary));
+  margin-left: 3px;
+}
+/* Marca tenue para las líneas que tienen explicación. */
+.vd-has-explanation {
+  border-left: 2px solid hsl(var(--primary) / 0.28);
+  margin-left: 4px;
+}
+
+.bg-grid {
+  background-image: linear-gradient(hsl(var(--border) / 0.5) 1px, transparent 1px),
+    linear-gradient(90deg, hsl(var(--border) / 0.5) 1px, transparent 1px);
+  background-size: 44px 44px;
+  mask-image: radial-gradient(ellipse at 50% 0%, black 30%, transparent 75%);
+  -webkit-mask-image: radial-gradient(ellipse at 50% 0%, black 30%, transparent 75%);
+}
+
+.mermaid-host svg {
+  max-width: 100%;
+  height: auto;
+  margin-inline: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
