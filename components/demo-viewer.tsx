@@ -7,11 +7,17 @@ import { DEMO_ANALISIS } from "@/lib/demo";
 export function DemoViewer() {
   return (
     <AnalysisViewer
-      codigo={DEMO_ANALISIS.codigo}
-      lenguaje={DEMO_ANALISIS.lenguaje}
-      resumen={DEMO_ANALISIS.resumen}
-      bloques={DEMO_ANALISIS.bloques}
-      diagrama={DEMO_ANALISIS.diagrama}
+      datos={{
+        codigo: DEMO_ANALISIS.codigo,
+        lenguaje: DEMO_ANALISIS.lenguaje,
+        resumen: DEMO_ANALISIS.resumen,
+        bloques: DEMO_ANALISIS.bloques,
+        diagramas: [{ tipo: "FLUJO", ...DEMO_ANALISIS.diagrama }],
+        conceptos: [],
+        hallazgos: [],
+        quiz: null,
+      }}
+      auditado={false}
     />
   );
 }

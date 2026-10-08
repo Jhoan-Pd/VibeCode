@@ -3,36 +3,45 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Monaco } from "@monaco-editor/react";
 import type { editor as MonacoNS } from "monaco-editor";
-import { BookOpen, FileInput, FileOutput, GitBranch, Package } from "lucide-react";
-import { MermaidDiagram } from "@/components/mermaid-diagram";
+import { BookMarked, BookOpen, Code2, FileInput, FileOutput, GitBranch, GraduationCap, Package, ShieldAlert } from "lucide-react";
 import { MonacoEditor, OPCIONES_VISOR } from "@/components/code-editor";
 import { RegenerarEtapa } from "@/components/regenerar-etapa";
 import { TextoConCodigo } from "@/components/texto-con-codigo";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs } from "@/components/ui/misc";
+import { AuditoriaPanel } from "@/components/viewer/auditoria-panel";
+import { DiagramasPanel } from "@/components/viewer/diagramas-panel";
+import { GlosarioPanel } from "@/components/viewer/glosario-panel";
+import { QuizPanel, type QuizPanelProps } from "@/components/viewer/quiz-panel";
 import { useIsDark } from "@/hooks/use-is-dark";
 import { cn } from "@/lib/utils";
 import { languageLabel } from "@/lib/language";
-import type { Bloque, Resumen } from "@/schemas/analysis";
+import type { Resumen } from "@/schemas/analysis";
+import type { AnalisisVista } from "@/schemas/vista";
 
 export interface AnalysisViewerProps {
-  codigo: string;
-  lenguaje: string;
-  resumen: Resumen | null;
-  bloques: Bloque[];
-  diagrama: { titulo: string; mermaid: string } | null;
-  /** Si se indica, se habilitan "Reintentar" y "Corregir diagrama con IA". La demo no lo pasa. */
+  datos: AnalisisVista;
+  /** Si se indica, se habilitan "Reintentar", "Corregir diagrama con IA" y el quiz calificado en el servidor. */
   analisisId?: string;
+  /** false si la auditoría todavía no se ha ejecutado (para no mostrar "sin hallazgos" por error). */
+  auditado?: boolean;
+  /** Solo la demo: califica el quiz en el navegador. */
+  calificarLocal?: QuizPanelProps["calificarLocal"];
+  /** Vista pública de solo lectura: oculta el quiz. */
+  soloLectura?: boolean;
 }
 
-type Pestana = "codigo" | "diagrama";
+type Pestana = "codigo" | "diagramas" | "glosario" | "auditoria" | "quiz";
 type Origen = "panel" | "editor";
 
-export function AnalysisViewer({ codigo, lenguaje, resumen, bloques, diagrama, analisisId }: AnalysisViewerProps) {
+export function AnalysisViewer({ datos, analisisId, auditado = true, calificarLocal, soloLectura = false }: AnalysisViewerProps) {
+  const { codigo, lenguaje, resumen, bloques, diagramas, conceptos, hallazgos, quiz } = datos;
   const oscuro = useIsDark();
   const [pestana, setPestana] = useState<Pestana>("codigo");
   const [activo, setActivo] = useState<number | null>(null);
+  /** Rango resaltado desde el glosario, la auditoría o el quiz (distinto de los bloques). */
+  const [foco, setFoco] = useState<{ inicio: number; fin: number; n: number } | null>(null);
   const [editorListo, setEditorListo] = useState(false);
 
   const editorRef = useRef<MonacoNS.IStandaloneCodeEditor | null>(null);
@@ -58,6 +67,13 @@ export function AnalysisViewer({ codigo, lenguaje, resumen, bloques, diagrama, a
     origenRef.current = origen;
     activoRef.current = indice;
     setActivo(indice);
+    setFoco(null);
+  }, []);
+
+  /** Lleva al editor y resalta un rango (lo usan glosario, auditoría y quiz). */
+  const irALineas = useCallback((inicio: number, fin: number) => {
+    setPestana("codigo");
+    setFoco((prev) => ({ inicio, fin, n: (prev?.n ?? 0) + 1 }));
   }, []);
 
   const alMontar = useCallback(
@@ -84,15 +100,30 @@ export function AnalysisViewer({ codigo, lenguaje, resumen, bloques, diagrama, a
     const coleccion = decoracionesRef.current;
     if (!editorListo || !monaco || !coleccion) return;
 
-    coleccion.set(
-      bloques.map((b, i) => ({
-        range: new monaco.Range(b.lineaInicio, 1, b.lineaFin, 1),
-        options:
-          i === activo
-            ? { isWholeLine: true, className: "vd-hl-line", linesDecorationsClassName: "vd-hl-gutter" }
-            : { linesDecorationsClassName: "vd-has-explanation" },
-      })),
-    );
+    const marcas: MonacoNS.IModelDeltaDecoration[] = bloques.map((b, i) => ({
+      range: new monaco.Range(b.lineaInicio, 1, b.lineaFin, 1),
+      options:
+        i === activo && !foco
+          ? { isWholeLine: true, className: "vd-hl-line", linesDecorationsClassName: "vd-hl-gutter" }
+          : { linesDecorationsClassName: "vd-has-explanation" },
+    }));
+    if (foco) {
+      marcas.push({
+        range: new monaco.Range(foco.inicio, 1, foco.fin, 1),
+        options: { isWholeLine: true, className: "vd-foco-line", linesDecorationsClassName: "vd-foco-gutter" },
+      });
+    }
+    coleccion.set(marcas);
+
+    if (foco) {
+      // El panel del editor acaba de mostrarse: se espera un cuadro para que Monaco recalcule su tamaño.
+      const t = setTimeout(() => {
+        editorRef.current?.layout();
+        editorRef.current?.revealLinesInCenter(foco.inicio, foco.fin);
+        editorRef.current?.getDomNode()?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+      }, 60);
+      return () => clearTimeout(t);
+    }
 
     if (activo !== null) {
       const b = bloques[activo];
@@ -102,7 +133,7 @@ export function AnalysisViewer({ codigo, lenguaje, resumen, bloques, diagrama, a
         itemsRef.current[activo]?.scrollIntoView({ block: "nearest", behavior: "smooth" });
       }
     }
-  }, [activo, bloques, editorListo]);
+  }, [activo, bloques, editorListo, foco]);
 
   const lineas = useMemo(() => codigo.split("\n").length, [codigo]);
 
@@ -115,8 +146,11 @@ export function AnalysisViewer({ codigo, lenguaje, resumen, bloques, diagrama, a
           value={pestana}
           onChange={setPestana}
           items={[
-            { id: "codigo", label: <>Código y explicación</> },
-            { id: "diagrama", label: <><GitBranch className="size-4" /> Diagrama de flujo</> },
+            { id: "codigo", label: <><Code2 className="size-4" /> Código y explicación</> },
+            { id: "diagramas", label: <><GitBranch className="size-4" /> Diagramas{diagramas.length > 1 ? ` (${diagramas.length})` : ""}</> },
+            { id: "glosario", label: <><BookMarked className="size-4" /> Glosario</> },
+            { id: "auditoria", label: <><ShieldAlert className="size-4" /> Auditoría{hallazgos.length > 0 ? ` (${hallazgos.length})` : ""}</> },
+            ...(soloLectura ? [] : [{ id: "quiz" as const, label: <><GraduationCap className="size-4" /> Quiz</> }]),
           ]}
         />
 
@@ -185,23 +219,20 @@ export function AnalysisViewer({ codigo, lenguaje, resumen, bloques, diagrama, a
           )}
         </div>
 
-        <div className={cn(pestana !== "diagrama" && "hidden")}>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle>{diagrama?.titulo ?? "Diagrama de flujo"}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {diagrama ? (
-                <MermaidDiagram codigo={diagrama.mermaid} analisisId={analisisId} />
-              ) : (
-                <div className="space-y-3 py-4 text-sm text-muted-foreground">
-                  <p>No se pudo generar el diagrama para este código.</p>
-                  {analisisId && <RegenerarEtapa analisisId={analisisId} etapa="diagrama">Generar diagrama</RegenerarEtapa>}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+        <div className={cn(pestana !== "diagramas" && "hidden")}>
+          <DiagramasPanel diagramas={diagramas} analisisId={analisisId} />
         </div>
+
+        {pestana === "glosario" && <GlosarioPanel conceptos={conceptos} irALineas={irALineas} analisisId={analisisId} />}
+
+        {pestana === "auditoria" && <AuditoriaPanel hallazgos={hallazgos} auditado={auditado} irALineas={irALineas} analisisId={analisisId} />}
+
+        {/* El quiz se mantiene montado para no perder las respuestas al consultar el código. */}
+        {!soloLectura && (
+          <div className={cn(pestana !== "quiz" && "hidden")}>
+            <QuizPanel key={quiz?.id ?? "sin-quiz"} quiz={quiz} irALineas={irALineas} analisisId={analisisId} calificarLocal={calificarLocal} />
+          </div>
+        )}
       </div>
     </div>
   );

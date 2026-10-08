@@ -74,6 +74,14 @@
   border-left: 3px solid hsl(var(--primary));
   margin-left: 3px;
 }
+/* Rango enfocado desde el glosario, la auditoría, el quiz o el chat. */
+.vd-foco-line {
+  background: hsl(38 92% 50% / 0.18);
+}
+.vd-foco-gutter {
+  border-left: 3px solid hsl(38 92% 50%);
+  margin-left: 3px;
+}
 /* Marca tenue para las líneas que tienen explicación. */
 .vd-has-explanation {
   border-left: 2px solid hsl(var(--primary) / 0.28);

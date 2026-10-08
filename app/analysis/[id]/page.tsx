@@ -10,11 +10,11 @@ import { RegenerarEtapa } from "@/components/regenerar-etapa";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Alert } from "@/components/ui/misc";
-import { db } from "@/lib/db";
 import { languageLabel } from "@/lib/language";
 import { formatearFecha } from "@/lib/utils";
-import { ResumenSchema } from "@/schemas/analysis";
+import type { Etapa } from "@/schemas/analysis";
 import { NIVEL_INFO } from "@/schemas/common";
+import { cargarAnalisis } from "@/services/vista.service";
 
 export const metadata: Metadata = { title: "Resultado del análisis" };
 export const dynamic = "force-dynamic";
@@ -22,36 +22,38 @@ export const dynamic = "force-dynamic";
 /** Si un análisis lleva más de esto "procesando", se asume que la función serverless murió. */
 const MINUTOS_PARA_CONSIDERAR_ATASCADO = 4;
 
+const TEXTO_REGENERAR: Record<Etapa, string> = {
+  resumen: "Regenerar resumen",
+  lineas: "Regenerar explicación",
+  diagrama: "Regenerar diagramas",
+  glosario: "Generar glosario",
+  auditoria: "Auditar código",
+  quiz: "Generar quiz",
+};
+
 export default async function AnalysisPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await auth();
   if (!session?.user?.id) redirect(`/login?callbackUrl=/analysis/${id}`);
 
   // Filtrar por usuarioId evita que un usuario vea análisis ajenos (si no es suyo, responde 404).
-  const analisis = await db.analisis.findFirst({
-    where: { id, usuarioId: session.user.id },
-    include: {
-      explicaciones: { orderBy: { orden: "asc" } },
-      diagramas: { where: { tipo: "FLUJO" }, take: 1 },
-    },
-  });
-  if (!analisis) notFound();
-
-  // El JSON guardado se vuelve a validar: si el esquema cambió o el dato se corrompió, no rompe la página.
-  const resumenParseado = ResumenSchema.safeParse(analisis.resumen);
-  const resumen = resumenParseado.success ? resumenParseado.data : null;
-  const diagrama = analisis.diagramas[0] ? { titulo: analisis.diagramas[0].titulo, mermaid: analisis.diagramas[0].codigoMermaid } : null;
-  const bloques = analisis.explicaciones.map((e) => ({
-    lineaInicio: e.lineaInicio,
-    lineaFin: e.lineaFin,
-    titulo: e.titulo,
-    explicacion: e.explicacion,
-  }));
+  const cargado = await cargarAnalisis({ id, usuarioId: session.user.id }, { usuarioQuiz: session.user.id, incluirQuiz: true });
+  if (!cargado) notFound();
+  const { analisis, vista } = cargado;
 
   const minutos = (Date.now() - analisis.creadoEn.getTime()) / 60_000;
   const procesando = analisis.estado === "PROCESANDO" && minutos < MINUTOS_PARA_CONSIDERAR_ATASCADO;
   const atascado = analisis.estado === "PROCESANDO" && !procesando;
-  const faltantes = [!resumen && "resumen", bloques.length === 0 && "lineas", !diagrama && "diagrama"].filter(Boolean) as ("resumen" | "lineas" | "diagrama")[];
+  const faltantes = (
+    [
+      !vista.resumen && "resumen",
+      vista.bloques.length === 0 && "lineas",
+      vista.diagramas.length === 0 && "diagrama",
+      vista.conceptos.length === 0 && "glosario",
+      !analisis.auditadoEn && "auditoria",
+      !vista.quiz && "quiz",
+    ] as const
+  ).filter((x): x is Etapa => Boolean(x));
 
   return (
     <div className="container space-y-6 py-8">
@@ -89,7 +91,7 @@ export default async function AnalysisPage({ params }: { params: Promise<{ id: s
             <div className="mt-3 flex flex-wrap gap-2">
               {faltantes.map((etapa) => (
                 <RegenerarEtapa key={etapa} analisisId={analisis.id} etapa={etapa}>
-                  {etapa === "resumen" ? "Regenerar resumen" : etapa === "lineas" ? "Regenerar explicación" : "Regenerar diagrama"}
+                  {TEXTO_REGENERAR[etapa]}
                 </RegenerarEtapa>
               ))}
             </div>
@@ -97,14 +99,7 @@ export default async function AnalysisPage({ params }: { params: Promise<{ id: s
         </Alert>
       )}
 
-      <AnalysisViewer
-        analisisId={analisis.id}
-        codigo={analisis.codigo}
-        lenguaje={analisis.lenguaje}
-        resumen={resumen}
-        bloques={bloques}
-        diagrama={diagrama}
-      />
+      <AnalysisViewer analisisId={analisis.id} datos={vista} auditado={analisis.auditadoEn !== null} />
     </div>
   );
 }
