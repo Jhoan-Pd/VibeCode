@@ -164,6 +164,7 @@ export class AnalisisService {
           await db.$transaction([
             db.hallazgoAuditoria.deleteMany({ where: { analisisId } }),
             db.hallazgoAuditoria.createMany({ data: hallazgos.map((h) => ({ analisisId, ...h })) }),
+            db.analisis.update({ where: { id: analisisId }, data: { auditadoEn: new Date() } }),
           ]);
           break;
         }

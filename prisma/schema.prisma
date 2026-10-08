@@ -90,6 +90,8 @@ model Analisis {
   errorMensaje   String?
   modelo         String?
   versionPrompts String?
+  /// Cuándo terminó la auditoría (null = aún no auditado; distingue "sin hallazgos" de "sin auditar")
+  auditadoEn     DateTime?
   /// Si el resultado se copió de otro análisis con el mismo hash (caché), id del original
   origenCacheId  String?
   /// Token del enlace público de solo lectura (Fase 3)

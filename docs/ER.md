@@ -42,6 +42,7 @@ erDiagram
         string errorMensaje
         string modelo
         string versionPrompts
+        datetime auditadoEn "null si aun no se audito"
         string origenCacheId "analisis copiado desde la cache"
         string tokenPublico UK "enlace publico de solo lectura"
         datetime creadoEn
