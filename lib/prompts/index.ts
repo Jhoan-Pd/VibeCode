@@ -12,3 +12,4 @@ export { promptExplicacion } from "./v1/explicacion";
 export { promptDiagrama, promptRepararDiagrama } from "./v1/diagrama";
 export { promptGlosario } from "./v1/glosario";
 export { promptAuditoria } from "./v1/auditoria";
+export { promptQuiz } from "./v1/quiz";
