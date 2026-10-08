@@ -177,5 +177,3 @@ Ver [docs/GUIA-DESPLIEGUE.md](docs/GUIA-DESPLIEGUE.md): Supabase o Neon, Gemini,
 - Aún no hay límite diario de análisis ni caché por hash (Fase 2); el hash ya se guarda.
 - No hay limitación de intentos de login (conviene añadirla antes de un uso público amplio).
 - El diagrama de clases y el de secuencia llegan en la Fase 2.
-#   V i b e C o d e  
- 
