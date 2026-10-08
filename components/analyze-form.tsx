@@ -13,6 +13,7 @@ import { Alert, Spinner, Tabs } from "@/components/ui/misc";
 import { useIsDark } from "@/hooks/use-is-dark";
 import { analizarConStream } from "@/lib/client/analyze-stream";
 import { MAX_CODE_CHARS } from "@/lib/config";
+import type { EstadoCupo } from "@/lib/limites";
 import { LANGUAGES, detectLanguage, languageLabel, type LanguageId } from "@/lib/language";
 import { cn } from "@/lib/utils";
 import { ETAPAS, type Etapa } from "@/schemas/analysis";
@@ -29,7 +30,7 @@ interface GistArchivo {
 const ETAPAS_INICIALES = Object.fromEntries(ETAPAS.map((e) => [e, "pendiente"])) as Record<Etapa, EstadoEtapa>;
 const EXTENSIONES = ".js,.jsx,.mjs,.cjs,.ts,.tsx,.py,.java,.cs,.php,.sql,.html,.htm,.css,.txt";
 
-export function AnalyzeForm({ nivelInicial }: { nivelInicial: NivelUsuario }) {
+export function AnalyzeForm({ nivelInicial, cupo }: { nivelInicial: NivelUsuario; cupo: EstadoCupo }) {
   const router = useRouter();
   const oscuro = useIsDark();
 
@@ -39,6 +40,7 @@ export function AnalyzeForm({ nivelInicial }: { nivelInicial: NivelUsuario }) {
   const [lenguajeSel, setLenguajeSel] = useState<LanguageId | "auto">("auto");
   const [nivel, setNivel] = useState<NivelUsuario>(nivelInicial);
   const [titulo, setTitulo] = useState("");
+  const [forzar, setForzar] = useState(false);
 
   const [arrastrando, setArrastrando] = useState(false);
   const [errorFuente, setErrorFuente] = useState<string | null>(null);
@@ -112,13 +114,13 @@ export function AnalyzeForm({ nivelInicial }: { nivelInicial: NivelUsuario }) {
     setMensajesEtapa({});
 
     // Objeto mutable: TypeScript no estrecha mal los valores asignados dentro del callback del stream.
-    const res: { analisisId: string | null; terminado: "COMPLETO" | "ERROR" | null; mensaje?: string } = {
+    const res: { analisisId: string | null; terminado: "COMPLETO" | "ERROR" | null; mensaje?: string; desdeCache?: boolean } = {
       analisisId: null,
       terminado: null,
     };
 
     try {
-      await analizarConStream({ codigo, lenguaje: lenguajeSel, nivel, titulo: titulo || undefined }, (e) => {
+      await analizarConStream({ codigo, lenguaje: lenguajeSel, nivel, titulo: titulo || undefined, forzar }, (e) => {
         if (e.type === "start") res.analisisId = e.analisisId;
         else if (e.type === "stage") {
           setEtapas((prev) => ({ ...prev, [e.etapa]: e.status }));
@@ -126,6 +128,7 @@ export function AnalyzeForm({ nivelInicial }: { nivelInicial: NivelUsuario }) {
         } else if (e.type === "done") {
           res.terminado = e.estado;
           res.mensaje = e.message;
+          res.desdeCache = e.desdeCache;
         } else if (e.type === "error") {
           res.terminado = "ERROR";
           res.mensaje = e.message;
@@ -144,7 +147,7 @@ export function AnalyzeForm({ nivelInicial }: { nivelInicial: NivelUsuario }) {
       return;
     }
     // COMPLETO, o la conexión se cortó pero el análisis sigue en el servidor: la página de resultados se encarga.
-    if (res.analisisId) router.push(`/analysis/${res.analisisId}`);
+    if (res.analisisId) router.push(`/analysis/${res.analisisId}${res.desdeCache ? "?cache=1" : ""}`);
     else {
       setErrorAnalisis("La conexión se interrumpió. Revisa tu historial.");
       setFase("error");
@@ -313,9 +316,22 @@ export function AnalyzeForm({ nivelInicial }: { nivelInicial: NivelUsuario }) {
                 </Alert>
               )}
 
+              <label className="flex items-start gap-2 text-sm">
+                <input type="checkbox" className="mt-1 accent-[hsl(var(--primary))]" checked={forzar} onChange={(e) => setForzar(e.target.checked)} />
+                <span>
+                  Ignorar caché
+                  <span className="block text-xs text-muted-foreground">Si este código ya se analizó con este nivel, normalmente se reutiliza al instante y no cuenta para tu límite.</span>
+                </span>
+              </label>
+
               <Button className="w-full" size="lg" onClick={analizar} disabled={vacio || excede}>
                 <Sparkles /> Analizar código
               </Button>
+              <p className={cn("text-center text-xs", cupo.restantes === 0 ? "text-destructive" : "text-muted-foreground")} aria-live="polite">
+                {cupo.restantes === 0
+                  ? `Usaste tus ${cupo.limite} análisis nuevos de hoy. Los códigos ya analizados siguen disponibles desde la caché.`
+                  : `Te quedan ${cupo.restantes} de ${cupo.limite} análisis nuevos hoy.`}
+              </p>
               {excede && <p className="text-xs text-destructive">Reduce el código a {MAX_CODE_CHARS.toLocaleString("es-CO")} caracteres o menos.</p>}
             </CardContent>
           </>
@@ -328,7 +344,7 @@ export function AnalyzeForm({ nivelInicial }: { nivelInicial: NivelUsuario }) {
             </CardHeader>
             <CardContent className="space-y-4">
               <AnalysisProgress etapas={etapas} mensajes={mensajesEtapa} />
-              <p className="text-xs text-muted-foreground">Suele tardar entre 10 y 40 segundos según el tamaño del código. No cierres esta pestaña.</p>
+              <p className="text-xs text-muted-foreground">Suele tardar entre 15 y 50 segundos según el tamaño del código. No cierres esta pestaña.</p>
             </CardContent>
           </>
         )}

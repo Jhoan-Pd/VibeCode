@@ -31,8 +31,14 @@ const TEXTO_REGENERAR: Record<Etapa, string> = {
   quiz: "Generar quiz",
 };
 
-export default async function AnalysisPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
+export default async function AnalysisPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ cache?: string }>;
+}) {
+  const [{ id }, { cache }] = await Promise.all([params, searchParams]);
   const session = await auth();
   if (!session?.user?.id) redirect(`/login?callbackUrl=/analysis/${id}`);
 
@@ -77,6 +83,13 @@ export default async function AnalysisPage({ params }: { params: Promise<{ id: s
           <DeleteAnalysisButton id={analisis.id} redirigirA="/dashboard" />
         </div>
       </div>
+
+      {(cache === "1" || analisis.origenCacheId) && !procesando && (
+        <Alert variant="info" title="Resultado recuperado de la caché">
+          Este mismo código ya se había analizado con el nivel {NIVEL_INFO[analisis.nivel].label.toLowerCase()}, así que se reutilizó el resultado al
+          instante: no se llamó a la IA ni se descontó de tu límite diario. Si quieres una explicación nueva, marca «Ignorar caché» al analizar.
+        </Alert>
+      )}
 
       {procesando && (
         <Alert variant="info" title="Este análisis todavía se está procesando">

@@ -5,6 +5,7 @@ export interface AnalyzePayload {
   lenguaje: string;
   nivel: string;
   titulo?: string;
+  forzar?: boolean;
 }
 
 /**

@@ -5,7 +5,7 @@ import type { Etapa } from "@/schemas/analysis";
 
 export type EstadoEtapa = "pendiente" | "running" | "done" | "error";
 
-/** Indicador de progreso por etapas (resumen, líneas, diagrama) alimentado por el stream del servidor. */
+/** Indicador de progreso por etapas (resumen, líneas, diagramas, glosario, auditoría y quiz) alimentado por el stream del servidor. */
 export function AnalysisProgress({ etapas, mensajes }: { etapas: Record<Etapa, EstadoEtapa>; mensajes?: Partial<Record<Etapa, string>> }) {
   return (
     <ol className="space-y-3" aria-live="polite" aria-label="Progreso del análisis">
