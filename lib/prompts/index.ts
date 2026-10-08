@@ -13,3 +13,4 @@ export { promptDiagrama, promptDiagramasEstructurales, promptRepararDiagrama } f
 export { promptGlosario } from "./v1/glosario";
 export { promptAuditoria } from "./v1/auditoria";
 export { promptQuiz } from "./v1/quiz";
+export { SISTEMA_CHAT, promptChat, type MensajePrevio } from "./v1/chat";
