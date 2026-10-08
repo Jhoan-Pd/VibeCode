@@ -72,6 +72,9 @@ export class GroqProvider implements LLMProvider {
 
       const detalle = data.error?.message?.slice(0, 300);
       if (res.status === 401 || res.status === 403) throw new LLMError("Groq rechazó la clave", "AUTH", detalle);
+      if (res.status === 404 || data.error?.code === "model_not_found" || data.error?.code === "model_decommissioned") {
+        throw new LLMError(`El modelo ${this.model} no existe en Groq`, "CONFIG", detalle);
+      }
       if (res.status === 429) {
         const espera = segundosRetryAfter(res.headers.get("retry-after"));
         if (espera !== null && espera <= 15_000 && intento < MAX_INTENTOS) {

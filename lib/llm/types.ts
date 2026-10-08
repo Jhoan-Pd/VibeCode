@@ -33,6 +33,7 @@ export interface LLMProvider {
 export type LLMErrorCode =
   | "RATE_LIMIT" // límite del plan gratuito
   | "AUTH" // clave inválida o ausente
+  | "CONFIG" // el modelo configurado no existe o no está disponible para esta clave
   | "UNAVAILABLE" // 5xx / sobrecarga
   | "TIMEOUT"
   | "BLOCKED" // filtro de seguridad del proveedor
@@ -58,6 +59,8 @@ export function mensajeAmigable(error: unknown): string {
         return "El proveedor de IA alcanzó su límite gratuito. Espera un minuto e inténtalo de nuevo.";
       case "AUTH":
         return "La clave del proveedor de IA no es válida o no está configurada en el servidor.";
+      case "CONFIG":
+        return "El modelo de IA configurado no existe o no está disponible para esta clave. Revisa GEMINI_MODEL o GROQ_MODEL.";
       case "UNAVAILABLE":
         return "El proveedor de IA está saturado en este momento. Inténtalo de nuevo en unos segundos.";
       case "TIMEOUT":

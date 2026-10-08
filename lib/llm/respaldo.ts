@@ -1,11 +1,11 @@
 import { LLMError, type LLMErrorCode, type LLMProvider, type LLMRequest, type LLMResponse } from "./types";
 
 /** Errores en los que tiene sentido probar con otro proveedor (no dependen del prompt). */
-const CODIGOS_CON_RESPALDO: LLMErrorCode[] = ["RATE_LIMIT", "UNAVAILABLE", "TIMEOUT", "AUTH", "BLOCKED"];
+const CODIGOS_CON_RESPALDO: LLMErrorCode[] = ["RATE_LIMIT", "UNAVAILABLE", "TIMEOUT", "AUTH", "CONFIG", "BLOCKED"];
 
 /**
  * Patrón Decorator/Composite sobre la interfaz LLMProvider: intenta con el principal y, si falla por
- * límite, caída, timeout o clave inválida, repite la MISMA petición con el respaldo. Quien lo usa
+ * límite, caída, timeout, clave inválida o modelo inexistente, repite la MISMA petición con el respaldo. Quien lo usa
  * (generadores y servicios) no sabe que hay dos proveedores.
  */
 export class ProveedorConRespaldo implements LLMProvider {

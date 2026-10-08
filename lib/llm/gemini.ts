@@ -83,6 +83,7 @@ export class GeminiProvider implements LLMProvider {
       const detalle = data.error?.message?.slice(0, 300);
       if (res.status === 400 && /api key/i.test(detalle ?? "")) throw new LLMError("API key inválida", "AUTH", detalle);
       if (res.status === 401 || res.status === 403) throw new LLMError("Gemini rechazó la clave", "AUTH", detalle);
+      if (res.status === 404) throw new LLMError(`El modelo ${this.model} no existe en Gemini`, "CONFIG", detalle);
 
       if (res.status === 429) {
         const espera = this.retryDelayMs(data);

@@ -40,6 +40,7 @@ describe("GroqProvider", () => {
     const casos: [number, unknown, string][] = [
       [401, { error: { message: "Invalid API Key" } }, "AUTH"],
       [429, { error: { message: "Rate limit" } }, "RATE_LIMIT"],
+      [404, { error: { message: "model not found", code: "model_not_found" } }, "CONFIG"],
       [400, { error: { message: "Failed to generate JSON", code: "json_validate_failed" } }, "BAD_RESPONSE"],
     ];
     for (const [status, body, codigo] of casos) {
@@ -73,7 +74,7 @@ function falso(nombre: string, salidas: (string | LLMError)[]): LLMProvider & { 
 
 describe("ProveedorConRespaldo", () => {
   it("usa el respaldo si el principal falla por límite, caída, timeout o clave", async () => {
-    for (const codigo of ["RATE_LIMIT", "UNAVAILABLE", "TIMEOUT", "AUTH"] as const) {
+    for (const codigo of ["RATE_LIMIT", "UNAVAILABLE", "TIMEOUT", "AUTH", "CONFIG"] as const) {
       const principal = falso("gemini", [new LLMError("x", codigo)]);
       const respaldo = falso("groq", ['{"de":"groq"}']);
       const p = new ProveedorConRespaldo(principal, respaldo, () => {});
