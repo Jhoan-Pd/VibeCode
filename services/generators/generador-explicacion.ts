@@ -1,11 +1,13 @@
 import { CHUNK_LINES } from "@/lib/config";
 import { dividirEnBloques, dividirLineas, numerarLineas, type BloqueCodigo } from "@/lib/chunking";
 import { generateJson } from "@/lib/llm/json";
-import { SISTEMA_BASE, promptExplicacion, promptResumen } from "@/lib/prompts";
-import { BloquesSchema, ResumenSchema, type Bloque, type Resumen } from "@/schemas/analysis";
+import { SISTEMA_BASE, promptExplicacion, promptGlosario, promptResumen } from "@/lib/prompts";
+import { BloquesSchema, GlosarioSchema, ResumenSchema, type Bloque, type ConceptoLLM, type Resumen } from "@/schemas/analysis";
 import type { NivelUsuario } from "@/schemas/common";
 import { GeneradorBase } from "./generador-base";
-import { repararSolapes, validarBloques } from "./validacion";
+import { normalizarRango, repararSolapes, validarBloques, validarRangosOpcionales } from "./validacion";
+
+export type Concepto = ReturnType<typeof normalizarRango<ConceptoLLM>>;
 
 export interface EntradaCodigo {
   codigo: string;
@@ -13,7 +15,7 @@ export interface EntradaCodigo {
   nivel: NivelUsuario;
 }
 
-/** Genera el resumen general y la explicación línea por línea (por bloques lógicos). */
+/** Genera el resumen general, la explicación línea por línea (por bloques lógicos) y el glosario. */
 export class GeneradorExplicacion extends GeneradorBase {
   async generarResumen(entrada: EntradaCodigo): Promise<Resumen> {
     const lineas = dividirLineas(entrada.codigo);
@@ -29,6 +31,34 @@ export class GeneradorExplicacion extends GeneradorBase {
       maxOutputTokens: 2048,
     });
     return data;
+  }
+
+  /** Glosario de conceptos que aparecen en el código, con la primera línea donde se usan. */
+  async generarGlosario(entrada: EntradaCodigo): Promise<Concepto[]> {
+    const lineas = dividirLineas(entrada.codigo);
+    const { data } = await generateJson({
+      provider: this.provider,
+      system: SISTEMA_BASE,
+      prompt: promptGlosario({
+        codigoNumerado: numerarLineas(lineas),
+        lenguaje: entrada.lenguaje,
+        nivel: entrada.nivel,
+        totalLineas: lineas.length,
+      }),
+      schema: GlosarioSchema,
+      validate: (d) => validarRangosOpcionales(d.conceptos, lineas.length, "concepto"),
+      maxOutputTokens: 4096,
+    });
+    // Quita duplicados por nombre (el LLM a veces repite "async/await" y "Async/Await").
+    const vistos = new Set<string>();
+    return data.conceptos
+      .filter((c) => {
+        const clave = c.nombre.toLowerCase();
+        if (vistos.has(clave)) return false;
+        vistos.add(clave);
+        return true;
+      })
+      .map(normalizarRango);
   }
 
   /**

@@ -10,3 +10,4 @@ export { SISTEMA_BASE } from "./v1/sistema";
 export { promptResumen } from "./v1/resumen";
 export { promptExplicacion } from "./v1/explicacion";
 export { promptDiagrama, promptRepararDiagrama } from "./v1/diagrama";
+export { promptGlosario } from "./v1/glosario";

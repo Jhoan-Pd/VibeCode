@@ -58,3 +58,37 @@ export function validarBloques(
   }
   return problemas;
 }
+
+/**
+ * Valida rangos de línea OPCIONALES (glosario, auditoría, quiz): si vienen, deben estar
+ * dentro del archivo y en orden. Devuelve problemas legibles para el reintento del LLM.
+ */
+export function validarRangosOpcionales(
+  items: { lineaInicio?: number | null; lineaFin?: number | null }[],
+  totalLineas: number,
+  etiqueta: string,
+): string[] {
+  const malos = items
+    .map((it, i) => ({ ...it, i }))
+    .filter(({ lineaInicio: a, lineaFin: b }) => {
+      if (a == null && b == null) return false;
+      const inicio = a ?? b!;
+      const fin = b ?? a!;
+      return inicio < 1 || fin > totalLineas || fin < inicio;
+    });
+  if (malos.length === 0) return [];
+  const ejemplos = malos
+    .slice(0, 3)
+    .map((m) => `${etiqueta} ${m.i + 1} (${m.lineaInicio ?? "null"}-${m.lineaFin ?? "null"})`)
+    .join(", ");
+  return [`Rangos de línea inválidos en ${ejemplos}. Deben estar entre 1 y ${totalLineas} y lineaFin >= lineaInicio, o ser null.`];
+}
+
+/** Completa el rango cuando solo viene uno de los extremos. */
+export function normalizarRango<T extends { lineaInicio?: number | null; lineaFin?: number | null }>(
+  item: T,
+): Omit<T, "lineaInicio" | "lineaFin"> & { lineaInicio: number | null; lineaFin: number | null } {
+  const inicio = item.lineaInicio ?? item.lineaFin ?? null;
+  const fin = item.lineaFin ?? item.lineaInicio ?? null;
+  return { ...item, lineaInicio: inicio, lineaFin: fin };
+}
