@@ -42,7 +42,8 @@ erDiagram
         string errorMensaje
         string modelo
         string versionPrompts
-        string tokenPublico UK "enlace publico (Fase 3)"
+        string origenCacheId "analisis copiado desde la cache"
+        string tokenPublico UK "enlace publico de solo lectura"
         datetime creadoEn
         datetime actualizadoEn
     }
@@ -131,7 +132,8 @@ erDiagram
         string id PK
         string usuarioId FK
         date fecha
-        int cantidad
+        int cantidad "analisis nuevos del dia"
+        int consultasIA "regeneraciones, quizzes nuevos y chat"
     }
 ```
 

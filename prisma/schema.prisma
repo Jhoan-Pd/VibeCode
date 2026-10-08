@@ -90,6 +90,8 @@ model Analisis {
   errorMensaje   String?
   modelo         String?
   versionPrompts String?
+  /// Si el resultado se copió de otro análisis con el mismo hash (caché), id del original
+  origenCacheId  String?
   /// Token del enlace público de solo lectura (Fase 3)
   tokenPublico   String?        @unique
   creadoEn       DateTime       @default(now())
@@ -173,7 +175,7 @@ model Quiz {
   analisisId String
   creadoEn   DateTime @default(now())
 
-  analisis  Analisis     @relation(fields: [analisisId], references: [id], onDelete: Cascade)
+  analisis  Analisis      @relation(fields: [analisisId], references: [id], onDelete: Cascade)
   preguntas Pregunta[]
   intentos  IntentoQuiz[]
 
@@ -251,10 +253,13 @@ model MensajeChat {
 }
 
 model UsoDiario {
-  id        String   @id @default(cuid())
-  usuarioId String
-  fecha     DateTime @db.Date
-  cantidad  Int      @default(0)
+  id          String   @id @default(cuid())
+  usuarioId   String
+  fecha       DateTime @db.Date
+  /// Análisis nuevos que llamaron al LLM ese día (los resultados desde caché no cuentan)
+  cantidad    Int      @default(0)
+  /// Llamadas secundarias al LLM: regenerar etapas, corregir diagramas, nuevos quizzes y mensajes de chat
+  consultasIA Int      @default(0)
 
   usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
 
