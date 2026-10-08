@@ -9,7 +9,7 @@ export const PROMPT_VERSION = "v1";
 export { SISTEMA_BASE } from "./v1/sistema";
 export { promptResumen } from "./v1/resumen";
 export { promptExplicacion } from "./v1/explicacion";
-export { promptDiagrama, promptRepararDiagrama } from "./v1/diagrama";
+export { promptDiagrama, promptDiagramasEstructurales, promptRepararDiagrama } from "./v1/diagrama";
 export { promptGlosario } from "./v1/glosario";
 export { promptAuditoria } from "./v1/auditoria";
 export { promptQuiz } from "./v1/quiz";
