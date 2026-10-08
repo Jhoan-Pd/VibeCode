@@ -37,29 +37,15 @@ export class AnalisisService {
 
   /** Crea el registro en estado PROCESANDO. Resuelve el lenguaje si el usuario eligió "auto". */
   async crear(usuarioId: string, input: AnalyzeRequest) {
-    const lenguaje = input.lenguaje === "auto" ? detectLanguage(input.codigo) : input.lenguaje;
-    const titulo = input.titulo?.trim() || tituloAutomatico(input.codigo, lenguaje);
-    return db.analisis.create({
-      data: {
-        usuarioId,
-        titulo,
-        codigo: input.codigo,
-        lenguaje,
-        nivel: input.nivel,
-        hash: hashCodigo(input.codigo, input.nivel),
-        estado: "PROCESANDO",
-        modelo: `${this.provider.name}:${this.provider.model}`,
-        versionPrompts: PROMPT_VERSION,
-      },
-    });
+    return crearRegistro(usuarioId, input, { estado: "PROCESANDO", modelo: `${this.provider.name}:${this.provider.model}` });
   }
 
   /** Ejecuta todas las etapas y deja el análisis en COMPLETO o ERROR. Nunca lanza: reporta por `emitir`. */
-  async ejecutar(analisisId: string, emitir: Emitir = () => {}): Promise<void> {
+  async ejecutar(analisisId: string, emitir: Emitir = () => {}): Promise<"COMPLETO" | "ERROR"> {
     const analisis = await db.analisis.findUnique({ where: { id: analisisId } });
     if (!analisis) {
       emitir({ type: "error", message: "Análisis no encontrado" });
-      return;
+      return "ERROR";
     }
     const entrada: EntradaCodigo = { codigo: analisis.codigo, lenguaje: analisis.lenguaje, nivel: analisis.nivel };
 
@@ -80,6 +66,7 @@ export class AnalisisService {
       estado: todasFallaron ? "ERROR" : "COMPLETO",
       message: errores[0],
     });
+    return todasFallaron ? "ERROR" : "COMPLETO";
   }
 
   /** Regenera una sola etapa (botón "Reintentar" cuando falló o quedó incompleta). */
@@ -211,6 +198,28 @@ export class AnalisisService {
       data: { titulo: corregido.titulo, codigoMermaid: corregido.mermaid },
     });
   }
+}
+
+/** Lenguaje (si es "auto") y título resueltos para un análisis nuevo; también lo usa la caché. */
+export function resolverMetadatos(input: AnalyzeRequest): { lenguaje: string; titulo: string } {
+  const lenguaje = input.lenguaje === "auto" ? detectLanguage(input.codigo) : input.lenguaje;
+  return { lenguaje, titulo: input.titulo?.trim() || tituloAutomatico(input.codigo, lenguaje) };
+}
+
+function crearRegistro(usuarioId: string, input: AnalyzeRequest, extra: { estado: "PROCESANDO"; modelo: string }) {
+  const { lenguaje, titulo } = resolverMetadatos(input);
+  return db.analisis.create({
+    data: {
+      usuarioId,
+      titulo,
+      codigo: input.codigo,
+      lenguaje,
+      nivel: input.nivel,
+      hash: hashCodigo(input.codigo, input.nivel),
+      versionPrompts: PROMPT_VERSION,
+      ...extra,
+    },
+  });
 }
 
 function tituloAutomatico(codigo: string, lenguaje: string): string {

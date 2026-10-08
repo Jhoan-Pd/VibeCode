@@ -4,7 +4,7 @@ import type { Etapa } from "@/schemas/analysis";
 export type AnalysisEvent =
   | { type: "start"; analisisId: string }
   | { type: "stage"; etapa: Etapa; status: "running" | "done" | "error"; message?: string }
-  | { type: "done"; analisisId: string; estado: "COMPLETO" | "ERROR"; message?: string }
+  | { type: "done"; analisisId: string; estado: "COMPLETO" | "ERROR"; message?: string; desdeCache?: boolean }
   | { type: "error"; message: string };
 
 export const ETAPAS_UI: { id: Etapa; label: string; detalle: string }[] = [
