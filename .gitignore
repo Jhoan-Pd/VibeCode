@@ -10,3 +10,6 @@ next-env.d.ts
 .vercel
 coverage
 public/monaco
+
+# Carpeta temporal local (no versionar)
+_to_delete
