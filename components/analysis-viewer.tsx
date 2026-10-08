@@ -50,6 +50,7 @@ export function AnalysisViewer({ datos, analisisId, auditado = true, calificarLo
   const origenRef = useRef<Origen>("panel");
   const activoRef = useRef<number | null>(null);
   const itemsRef = useRef<(HTMLElement | null)[]>([]);
+  const codigoRef = useRef<HTMLDivElement | null>(null);
 
   // línea -> índice del bloque que la explica (para el resaltado editor -> panel)
   const lineaABloque = useMemo(() => {
@@ -120,7 +121,7 @@ export function AnalysisViewer({ datos, analisisId, auditado = true, calificarLo
       const t = setTimeout(() => {
         editorRef.current?.layout();
         editorRef.current?.revealLinesInCenter(foco.inicio, foco.fin);
-        editorRef.current?.getDomNode()?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+        codigoRef.current?.scrollIntoView({ block: "start", behavior: "smooth" });
       }, 60);
       return () => clearTimeout(t);
     }
@@ -155,7 +156,7 @@ export function AnalysisViewer({ datos, analisisId, auditado = true, calificarLo
         />
 
         {/* Se mantienen montados los dos paneles (con `hidden`) para no recargar Monaco al cambiar de pestaña. */}
-        <div className={cn(pestana !== "codigo" && "hidden")}>
+        <div ref={codigoRef} className={cn("scroll-mt-20", pestana !== "codigo" && "hidden")}>
           <div className="grid gap-4 lg:grid-cols-2">
             <Card className="overflow-hidden">
               <div className="flex items-center justify-between border-b px-4 py-2 text-xs text-muted-foreground">
