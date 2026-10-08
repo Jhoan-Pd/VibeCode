@@ -6,6 +6,13 @@ import { Copy, Wand2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Alert, Skeleton, Spinner } from "@/components/ui/misc";
 import { useIsDark } from "@/hooks/use-is-dark";
+import type { TipoMermaid } from "@/lib/mermaid";
+
+const ETIQUETA: Record<TipoMermaid, string> = {
+  FLUJO: "Diagrama de flujo del código",
+  CLASES: "Diagrama de clases del código",
+  SECUENCIA: "Diagrama de secuencia del código",
+};
 
 type Estado = "cargando" | "ok" | "error";
 
@@ -16,7 +23,7 @@ type Estado = "cargando" | "ok" | "error";
  *  3) si hay `analisisId`, el usuario puede pedirle al LLM que lo corrija (/api/analysis/:id/diagrama).
  * Seguridad: securityLevel "strict" => Mermaid sanea el SVG (DOMPurify) y deshabilita click/HTML.
  */
-export function MermaidDiagram({ codigo, analisisId }: { codigo: string; analisisId?: string }) {
+export function MermaidDiagram({ codigo, analisisId, tipo = "FLUJO" }: { codigo: string; analisisId?: string; tipo?: TipoMermaid }) {
   const router = useRouter();
   const oscuro = useIsDark();
   const idBase = useId().replace(/[^a-zA-Z0-9]/g, "");
@@ -44,6 +51,8 @@ export function MermaidDiagram({ codigo, analisisId }: { codigo: string; analisi
           theme: oscuro ? "dark" : "default",
           suppressErrorRendering: true,
           flowchart: { htmlLabels: false, curve: "basis" },
+          sequence: { useMaxWidth: true },
+          class: { htmlLabels: false },
         });
         await mermaid.parse(fuente); // lanza si la sintaxis es inválida
         const { svg } = await mermaid.render(`mmd-${idBase}-${Date.now()}`, fuente);
@@ -70,7 +79,7 @@ export function MermaidDiagram({ codigo, analisisId }: { codigo: string; analisi
       const res = await fetch(`/api/analysis/${analisisId}/diagrama`, {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ error: errorParser.slice(0, 1500) }),
+        body: JSON.stringify({ error: errorParser.slice(0, 1500), tipo }),
       });
       const data = (await res.json().catch(() => ({}))) as { mermaid?: string; error?: string };
       if (!res.ok || !data.mermaid) {
@@ -110,7 +119,7 @@ export function MermaidDiagram({ codigo, analisisId }: { codigo: string; analisi
         <div
           className="mermaid-host overflow-auto rounded-md p-4"
           role="img"
-          aria-label="Diagrama de flujo del código"
+          aria-label={ETIQUETA[tipo]}
           // El SVG lo genera Mermaid con securityLevel "strict" (sanea el contenido).
           dangerouslySetInnerHTML={{ __html: svg }}
         />

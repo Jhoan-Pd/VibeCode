@@ -50,7 +50,10 @@ export function Tabs<T extends string>({
   className?: string;
 }) {
   return (
-    <div role="tablist" className={cn("inline-flex h-10 items-center rounded-lg bg-muted p-1 text-muted-foreground", className)}>
+    <div
+      role="tablist"
+      className={cn("inline-flex h-10 max-w-full items-center overflow-x-auto rounded-lg bg-muted p-1 text-muted-foreground", className)}
+    >
       {items.map((it) => (
         <button
           key={it.id}
