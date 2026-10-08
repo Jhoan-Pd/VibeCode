@@ -8,7 +8,7 @@ import type { EntradaCodigo } from "./generador-explicacion";
 
 /**
  * Genera el quiz de comprensión (5-10 preguntas de al menos 3 tipos) sobre el código concreto.
- * La salida se valida con Zod + reglas semánticas (índices válidos, opciones únicas, rangos de línea)
+ * La salida se valida con Zod + reglas semánticas (índices válidos, opciones únicas, variedad de tipos)
  * y se transforma al formato guardado (las preguntas ORDENAR se barajan aquí, no en el LLM).
  */
 export class GeneradorQuiz extends GeneradorBase {
@@ -24,10 +24,10 @@ export class GeneradorQuiz extends GeneradorBase {
         totalLineas: lineas.length,
       }),
       schema: QuizLLMSchema,
-      validate: (q) => validarQuiz(q, lineas.length),
+      validate: validarQuiz,
       temperature: 0.4,
       maxOutputTokens: 8192,
     });
-    return prepararPreguntas(data.preguntas);
+    return prepararPreguntas(data.preguntas, lineas.length);
   }
 }

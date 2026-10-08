@@ -92,3 +92,22 @@ export function normalizarRango<T extends { lineaInicio?: number | null; lineaFi
   const fin = item.lineaFin ?? item.lineaInicio ?? null;
   return { ...item, lineaInicio: inicio, lineaFin: fin };
 }
+
+/**
+ * Corrige de forma determinista rangos que el LLM suele errar por poco (como repararSolapes):
+ * recorta el final al tamaño del archivo, invierte rangos al revés y descarta (null) los que
+ * empiezan fuera del archivo. Es mejor que gastar un reintento del LLM por un desfase de una línea.
+ */
+export function ajustarRango<T extends { lineaInicio?: number | null; lineaFin?: number | null }>(
+  item: T,
+  totalLineas: number,
+): Omit<T, "lineaInicio" | "lineaFin"> & { lineaInicio: number | null; lineaFin: number | null } {
+  const { lineaInicio, lineaFin } = normalizarRango(item);
+  if (lineaInicio == null || lineaFin == null) return { ...item, lineaInicio: null, lineaFin: null };
+  let a = Math.min(lineaInicio, lineaFin);
+  let b = Math.max(lineaInicio, lineaFin);
+  if (a > totalLineas || b < 1) return { ...item, lineaInicio: null, lineaFin: null };
+  a = Math.max(1, a);
+  b = Math.min(totalLineas, b);
+  return { ...item, lineaInicio: a, lineaFin: b };
+}

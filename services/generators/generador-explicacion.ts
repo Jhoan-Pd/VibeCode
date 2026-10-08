@@ -5,7 +5,7 @@ import { SISTEMA_BASE, promptExplicacion, promptGlosario, promptResumen } from "
 import { BloquesSchema, GlosarioSchema, ResumenSchema, type Bloque, type ConceptoLLM, type Resumen } from "@/schemas/analysis";
 import type { NivelUsuario } from "@/schemas/common";
 import { GeneradorBase } from "./generador-base";
-import { normalizarRango, repararSolapes, validarBloques, validarRangosOpcionales } from "./validacion";
+import { ajustarRango, normalizarRango, repararSolapes, validarBloques } from "./validacion";
 
 export type Concepto = ReturnType<typeof normalizarRango<ConceptoLLM>>;
 
@@ -46,10 +46,9 @@ export class GeneradorExplicacion extends GeneradorBase {
         totalLineas: lineas.length,
       }),
       schema: GlosarioSchema,
-      validate: (d) => validarRangosOpcionales(d.conceptos, lineas.length, "concepto"),
       maxOutputTokens: 4096,
     });
-    // Quita duplicados por nombre (el LLM a veces repite "async/await" y "Async/Await").
+    // Los rangos se corrigen de forma determinista. Quita duplicados por nombre (el LLM a veces repite "async/await" y "Async/Await").
     const vistos = new Set<string>();
     return data.conceptos
       .filter((c) => {
@@ -58,7 +57,7 @@ export class GeneradorExplicacion extends GeneradorBase {
         vistos.add(clave);
         return true;
       })
-      .map(normalizarRango);
+      .map((c) => ajustarRango(c, lineas.length));
   }
 
   /**

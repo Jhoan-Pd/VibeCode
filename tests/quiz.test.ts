@@ -29,23 +29,29 @@ describe("esquema del quiz generado por el LLM", () => {
     expect(QuizLLMSchema.safeParse({ preguntas: [...QUIZ_LLM.preguntas.slice(0, 4), { tipo: "ENSAYO", enunciado: "Explica todo el código", explicacion: "..........." }] }).success).toBe(false);
   });
 
-  it("la validación semántica detecta índices inválidos, opciones repetidas, rangos y poca variedad", () => {
-    expect(validarQuiz(QUIZ_LLM, 9)).toEqual([]);
+  it("la validación semántica detecta índices inválidos, opciones repetidas y poca variedad", () => {
+    expect(validarQuiz(QUIZ_LLM)).toEqual([]);
     const malo: QuizLLM = {
       preguntas: [
         { tipo: "OPCION_MULTIPLE", enunciado: "Pregunta uno?", opciones: ["a", "A", "b"], correcta: 7, explicacion: "Explicación larga.", lineaInicio: 1, lineaFin: 99 },
         ...Array.from({ length: 4 }, () => ({ tipo: "OPCION_MULTIPLE" as const, enunciado: "Pregunta igual?", opciones: ["x", "y", "z"], correcta: 0, explicacion: "Explicación larga." })),
       ],
     };
-    const problemas = validarQuiz(malo, 10).join(" ");
+    const problemas = validarQuiz(malo).join(" ");
     expect(problemas).toMatch(/índice válido/);
     expect(problemas).toMatch(/repetidas/);
-    expect(problemas).toMatch(/fuera del archivo/);
     expect(problemas).toMatch(/3 tipos/);
   });
 });
 
 describe("preparación de preguntas", () => {
+  it("recorta los rangos de línea al tamaño del archivo y anula los que quedan fuera", () => {
+    const [p] = prepararPreguntas([{ ...QUIZ_LLM.preguntas[0], lineaInicio: 2, lineaFin: 12 }], 5);
+    expect([p.lineaInicio, p.lineaFin]).toEqual([2, 5]);
+    const [q] = prepararPreguntas([{ ...QUIZ_LLM.preguntas[0], lineaInicio: 9, lineaFin: 12 }], 5);
+    expect([q.lineaInicio, q.lineaFin]).toEqual([null, null]);
+  });
+
   it("baraja ORDENAR sin dejarla resuelta y guarda la permutación correcta", () => {
     const ordenar = prepararPreguntas(QUIZ_LLM.preguntas)[4];
     const correcta = ordenar.respuestaCorrecta as number[];

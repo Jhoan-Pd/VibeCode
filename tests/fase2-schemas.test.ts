@@ -5,7 +5,7 @@ import { normalizarMermaid, validarMermaidBasico } from "@/lib/mermaid";
 import { calificar, validarQuiz } from "@/lib/quiz";
 import { AuditoriaSchema, DiagramasEstructuralesSchema, GlosarioSchema, HallazgoSchema } from "@/schemas/analysis";
 import { ordenarHallazgos } from "@/services/generators/auditor-codigo";
-import { validarRangosOpcionales } from "@/services/generators/validacion";
+import { ajustarRango, validarRangosOpcionales } from "@/services/generators/validacion";
 
 const TOTAL = dividirLineas(DEMO_CODIGO).length;
 
@@ -20,6 +20,15 @@ describe("glosario", () => {
     expect(validarRangosOpcionales([{ lineaInicio: 3 }], 10, "concepto")).toEqual([]);
     expect(validarRangosOpcionales([{ lineaInicio: 8, lineaFin: 12 }], 10, "concepto")[0]).toMatch(/concepto 1/);
     expect(validarRangosOpcionales([{ lineaInicio: 6, lineaFin: 2 }], 10, "concepto")).toHaveLength(1);
+  });
+});
+
+describe("ajuste determinista de rangos", () => {
+  it("recorta, invierte o anula según el caso", () => {
+    expect(ajustarRango({ lineaInicio: 8, lineaFin: 12 }, 10)).toEqual({ lineaInicio: 8, lineaFin: 10 });
+    expect(ajustarRango({ lineaInicio: 6, lineaFin: 2 }, 10)).toEqual({ lineaInicio: 2, lineaFin: 6 });
+    expect(ajustarRango({ lineaInicio: 15, lineaFin: 20 }, 10)).toEqual({ lineaInicio: null, lineaFin: null });
+    expect(ajustarRango({ lineaInicio: 4 }, 10)).toEqual({ lineaInicio: 4, lineaFin: 4 });
   });
 });
 
@@ -66,7 +75,7 @@ describe("diagramas de clases y secuencia", () => {
 
 describe("quiz de la demo", () => {
   it("es válido y se puede aprobar con las respuestas correctas", () => {
-    expect(validarQuiz(DEMO_QUIZ_LLM, TOTAL)).toEqual([]);
+    expect(validarQuiz(DEMO_QUIZ_LLM)).toEqual([]);
     const correctas = Object.fromEntries(DEMO_PREGUNTAS.map((p) => [p.id, p.respuestaCorrecta]));
     expect(calificar(DEMO_PREGUNTAS, correctas).porcentaje).toBe(100);
   });

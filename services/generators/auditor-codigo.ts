@@ -4,7 +4,7 @@ import { SISTEMA_BASE, promptAuditoria } from "@/lib/prompts";
 import { AuditoriaSchema, SEVERIDADES, type HallazgoLLM } from "@/schemas/analysis";
 import { GeneradorBase } from "./generador-base";
 import type { EntradaCodigo } from "./generador-explicacion";
-import { normalizarRango, validarRangosOpcionales } from "./validacion";
+import { ajustarRango, type normalizarRango } from "./validacion";
 
 export type Hallazgo = ReturnType<typeof normalizarRango<HallazgoLLM>>;
 
@@ -29,10 +29,9 @@ export class AuditorCodigo extends GeneradorBase {
         totalLineas: lineas.length,
       }),
       schema: AuditoriaSchema,
-      validate: (d) => validarRangosOpcionales(d.hallazgos, lineas.length, "hallazgo"),
       maxOutputTokens: 6144,
     });
-    return ordenarHallazgos(data.hallazgos.map(normalizarRango));
+    return ordenarHallazgos(data.hallazgos.map((h) => ajustarRango(h, lineas.length)));
   }
 }
 

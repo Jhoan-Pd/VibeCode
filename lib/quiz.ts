@@ -55,10 +55,20 @@ export function barajarDistinto(n: number, semilla: string): number[] {
 
 export type PreguntaNueva = Omit<PreguntaGuardada, "id">;
 
-export function prepararPreguntas(preguntas: PreguntaLLM[]): PreguntaNueva[] {
+/** Recorta el rango al archivo (o lo anula si queda fuera): el LLM suele equivocarse por una línea. */
+function rangoSeguro(a: number | null | undefined, b: number | null | undefined, total: number): [number | null, number | null] {
+  const ini = a ?? b ?? null;
+  const fin = b ?? a ?? null;
+  if (ini == null || fin == null) return [null, null];
+  const x = Math.min(ini, fin);
+  const y = Math.max(ini, fin);
+  if (x > total || y < 1) return [null, null];
+  return [Math.max(1, x), Math.min(total, y)];
+}
+
+export function prepararPreguntas(preguntas: PreguntaLLM[], totalLineas = Number.POSITIVE_INFINITY): PreguntaNueva[] {
   return preguntas.map((p, orden) => {
-    const lineaInicio = p.lineaInicio ?? p.lineaFin ?? null;
-    const lineaFin = p.lineaFin ?? p.lineaInicio ?? null;
+    const [lineaInicio, lineaFin] = rangoSeguro(p.lineaInicio, p.lineaFin, totalLineas);
     const comun = {
       orden,
       tipo: p.tipo,
@@ -85,8 +95,11 @@ export function prepararPreguntas(preguntas: PreguntaLLM[]): PreguntaNueva[] {
   });
 }
 
-/** Validación semántica del quiz generado (lista vacía = válido). */
-export function validarQuiz(quiz: QuizLLM, totalLineas: number): string[] {
+/**
+ * Validación semántica del quiz generado (lista vacía = válido). Los rangos de línea no se validan
+ * aquí: prepararPreguntas los corrige de forma determinista.
+ */
+export function validarQuiz(quiz: QuizLLM): string[] {
   const problemas: string[] = [];
   quiz.preguntas.forEach((p, i) => {
     const n = i + 1;
@@ -97,11 +110,6 @@ export function validarQuiz(quiz: QuizLLM, totalLineas: number): string[] {
     }
     if (p.tipo === "ORDENAR" && new Set(p.pasos.map((x) => x.trim().toLowerCase())).size !== p.pasos.length) {
       problemas.push(`Pregunta ${n}: hay pasos repetidos.`);
-    }
-    const a = p.lineaInicio ?? p.lineaFin;
-    const b = p.lineaFin ?? p.lineaInicio;
-    if (a != null && b != null && (a < 1 || b > totalLineas || b < a)) {
-      problemas.push(`Pregunta ${n}: rango de líneas ${a}-${b} fuera del archivo (1-${totalLineas}).`);
     }
   });
   const tipos = new Set(quiz.preguntas.map((p) => p.tipo));

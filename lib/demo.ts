@@ -395,7 +395,7 @@ const DEMO_QUIZ_LLM: QuizLLM = {
 };
 
 /** Preguntas de la demo CON respuestas: la demo califica en el navegador (no hay nada que proteger). */
-export const DEMO_PREGUNTAS: PreguntaGuardada[] = prepararPreguntas(DEMO_QUIZ_LLM.preguntas).map((p, i) => ({ ...p, id: `demo-${i + 1}` }));
+export const DEMO_PREGUNTAS: PreguntaGuardada[] = prepararPreguntas(DEMO_QUIZ_LLM.preguntas, LINEAS.length).map((p, i) => ({ ...p, id: `demo-${i + 1}` }));
 export { DEMO_QUIZ_LLM };
 
 export const DEMO_DIAGRAMAS: DiagramaVista[] = [
