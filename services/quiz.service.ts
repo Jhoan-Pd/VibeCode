@@ -3,7 +3,8 @@ import { z } from "zod";
 import { Prisma } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import { calificar } from "@/lib/quiz";
-import { RespuestaValorSchema, aPreguntaPublica, type IntentoRequest, type PreguntaGuardada, type PreguntaPublica, type ResultadoQuiz, type TipoPregunta } from "@/schemas/quiz";
+import { RespuestaValorSchema, aPreguntaPublica, type IntentoRequest, type PreguntaGuardada, type ResultadoQuiz, type TipoPregunta } from "@/schemas/quiz";
+import type { QuizVista } from "@/schemas/vista";
 
 const OpcionesSchema = z.array(z.string()).nullable();
 
@@ -25,15 +26,8 @@ export function aPreguntaGuardada(p: PreguntaBD): PreguntaGuardada {
   };
 }
 
-export interface QuizParaCliente {
-  id: string;
-  preguntas: PreguntaPublica[];
-  /** Últimos intentos del usuario en este quiz (más reciente primero). */
-  intentos: { id: string; porcentaje: number; nivelComprension: string; creadoEn: Date }[];
-}
-
-/** Quiz más reciente del análisis, sin respuestas, con los intentos del usuario. */
-export async function obtenerQuizActual(analisisId: string, usuarioId: string | null): Promise<QuizParaCliente | null> {
+/** Quiz más reciente del análisis, sin respuestas, con los últimos intentos del usuario (más reciente primero). */
+export async function obtenerQuizActual(analisisId: string, usuarioId: string | null): Promise<QuizVista | null> {
   const quiz = await db.quiz.findFirst({
     where: { analisisId },
     orderBy: { creadoEn: "desc" },
