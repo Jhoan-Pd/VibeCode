@@ -6,13 +6,15 @@ import { hashCodigo } from "@/lib/hash";
 import { detectLanguage } from "@/lib/language";
 import { LLMError, mensajeAmigable, type LLMProvider } from "@/lib/llm/types";
 import { PROMPT_VERSION } from "@/lib/prompts";
-import type { AnalyzeRequest, Etapa } from "@/schemas/analysis";
+import type { TipoMermaid } from "@/lib/mermaid";
+import { ETAPAS, type AnalyzeRequest, type Etapa } from "@/schemas/analysis";
+import { AuditorCodigo } from "./generators/auditor-codigo";
 import { GeneradorDiagrama } from "./generators/generador-diagrama";
 import { GeneradorExplicacion, type EntradaCodigo } from "./generators/generador-explicacion";
+import { GeneradorQuiz } from "./generators/generador-quiz";
 
 type Emitir = (evento: AnalysisEvent) => void;
 
-const ETAPAS: Etapa[] = ["resumen", "lineas", "diagrama"];
 
 /**
  * Orquesta el análisis: crea el registro, ejecuta las etapas y persiste cada resultado.
@@ -23,10 +25,14 @@ const ETAPAS: Etapa[] = ["resumen", "lineas", "diagrama"];
 export class AnalisisService {
   private readonly explicacion: GeneradorExplicacion;
   private readonly diagrama: GeneradorDiagrama;
+  private readonly quiz: GeneradorQuiz;
+  private readonly auditor: AuditorCodigo;
 
   constructor(private readonly provider: LLMProvider) {
     this.explicacion = new GeneradorExplicacion(provider);
     this.diagrama = new GeneradorDiagrama(provider);
+    this.quiz = new GeneradorQuiz(provider);
+    this.auditor = new AuditorCodigo(provider);
   }
 
   /** Crea el registro en estado PROCESANDO. Resuelve el lenguaje si el usuario eligió "auto". */
@@ -84,12 +90,11 @@ export class AnalisisService {
     const error = await this.ejecutarEtapa(analisisId, etapa, entrada, () => {});
 
     // Recalcula el estado global a partir de lo que hay guardado.
-    const [a, nBloques, nDiagramas] = await Promise.all([
-      db.analisis.findUnique({ where: { id: analisisId }, select: { resumen: true } }),
-      db.explicacionLinea.count({ where: { analisisId } }),
-      db.diagrama.count({ where: { analisisId } }),
-    ]);
-    const hayAlgo = a?.resumen != null || nBloques > 0 || nDiagramas > 0;
+    const a = await db.analisis.findUnique({
+      where: { id: analisisId },
+      select: { resumen: true, _count: { select: { explicaciones: true, diagramas: true, conceptos: true, quizzes: true } } },
+    });
+    const hayAlgo = a != null && (a.resumen != null || Object.values(a._count).some((n) => n > 0));
     await db.analisis.update({
       where: { id: analisisId },
       data: { estado: hayAlgo ? "COMPLETO" : "ERROR", errorMensaje: error },
@@ -125,13 +130,63 @@ export class AnalisisService {
           break;
         }
         case "diagrama": {
-          const d = await this.diagrama.generarFlujo(entrada);
+          // El de flujo es obligatorio; los de clases/secuencia son un extra: si fallan, no tumban la etapa.
+          const [flujo, extras] = await Promise.allSettled([this.diagrama.generarFlujo(entrada), this.diagrama.generarEstructurales(entrada)]);
+          if (flujo.status === "rejected") throw flujo.reason;
+          const d = flujo.value;
           await db.diagrama.upsert({
             where: { analisisId_tipo: { analisisId, tipo: "FLUJO" } },
             create: { analisisId, tipo: "FLUJO", titulo: d.titulo, codigoMermaid: d.mermaid },
             update: { titulo: d.titulo, codigoMermaid: d.mermaid },
           });
+          if (extras.status === "fulfilled") {
+            await db.$transaction([
+              db.diagrama.deleteMany({ where: { analisisId, tipo: { in: ["CLASES", "SECUENCIA"] } } }),
+              db.diagrama.createMany({
+                data: extras.value.map((x) => ({ analisisId, tipo: x.tipo, titulo: x.titulo, codigoMermaid: x.mermaid })),
+              }),
+            ]);
+          } else {
+            console.error(`[analisis ${analisisId}] diagramas de clases/secuencia fallaron:`, extras.reason);
+          }
           break;
+        }
+        case "glosario": {
+          const conceptos = await this.explicacion.generarGlosario(entrada);
+          await db.$transaction([
+            db.concepto.deleteMany({ where: { analisisId } }),
+            db.concepto.createMany({ data: conceptos.map((c) => ({ analisisId, ...c })) }),
+          ]);
+          break;
+        }
+        case "auditoria": {
+          const hallazgos = await this.auditor.auditar(entrada);
+          await db.$transaction([
+            db.hallazgoAuditoria.deleteMany({ where: { analisisId } }),
+            db.hallazgoAuditoria.createMany({ data: hallazgos.map((h) => ({ analisisId, ...h })) }),
+          ]);
+          break;
+        }
+        case "quiz": {
+          // Un quiz nuevo NO borra los anteriores: sus intentos forman parte del historial de progreso.
+          const preguntas = await this.quiz.generar(entrada);
+          await db.quiz.create({
+            data: {
+              analisisId,
+              preguntas: {
+                create: preguntas.map((p) => ({
+                  ...p,
+                  opciones: p.opciones ?? undefined,
+                  respuestaCorrecta: p.respuestaCorrecta as Prisma.InputJsonValue,
+                })),
+              },
+            },
+          });
+          break;
+        }
+        default: {
+          const _exhaustivo: never = etapa;
+          throw new Error(`Etapa desconocida: ${String(_exhaustivo)}`);
         }
       }
       emitir({ type: "stage", etapa, status: "done" });
@@ -146,10 +201,10 @@ export class AnalisisService {
   }
 
   /** Reemplaza el diagrama por una versión corregida por el LLM tras un error de parseo en el cliente. */
-  async repararDiagrama(analisisId: string, errorParser: string) {
-    const actual = await db.diagrama.findUnique({ where: { analisisId_tipo: { analisisId, tipo: "FLUJO" } } });
+  async repararDiagrama(analisisId: string, errorParser: string, tipo: TipoMermaid = "FLUJO") {
+    const actual = await db.diagrama.findUnique({ where: { analisisId_tipo: { analisisId, tipo } } });
     if (!actual) return null;
-    const corregido = await this.diagrama.reparar(actual.codigoMermaid, errorParser);
+    const corregido = await this.diagrama.reparar(actual.codigoMermaid, errorParser, tipo);
     return db.diagrama.update({
       where: { id: actual.id },
       data: { titulo: corregido.titulo, codigoMermaid: corregido.mermaid },
