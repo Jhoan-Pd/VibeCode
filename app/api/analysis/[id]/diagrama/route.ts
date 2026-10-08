@@ -8,10 +8,10 @@ import { AnalisisService } from "@/services/analisis.service";
 export const maxDuration = 60;
 export const dynamic = "force-dynamic";
 
-const Body = z.object({ error: z.string().max(2000) });
+const Body = z.object({ error: z.string().max(2000), tipo: z.enum(["FLUJO", "CLASES", "SECUENCIA"]).default("FLUJO") });
 
 /**
- * POST /api/analysis/:id/diagrama { error }
+ * POST /api/analysis/:id/diagrama { error, tipo? }
  * El cliente valida el Mermaid con mermaid.parse(); si falla, envía aquí el mensaje del parser
  * y el LLM devuelve una versión corregida que reemplaza a la guardada.
  */
@@ -28,8 +28,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
   try {
     const servicio = new AnalisisService(getLLMProvider());
-    const diagrama = await servicio.repararDiagrama(id, parsed.data.error);
-    if (!diagrama) return jsonError("Este análisis no tiene diagrama", 404);
+    const diagrama = await servicio.repararDiagrama(id, parsed.data.error, parsed.data.tipo);
+    if (!diagrama) return jsonError("Este análisis no tiene ese diagrama", 404);
     return NextResponse.json({ titulo: diagrama.titulo, mermaid: diagrama.codigoMermaid });
   } catch (e) {
     return jsonError(mensajeAmigable(e), 502);
