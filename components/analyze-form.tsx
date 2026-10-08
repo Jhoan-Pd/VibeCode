@@ -15,7 +15,7 @@ import { analizarConStream } from "@/lib/client/analyze-stream";
 import { MAX_CODE_CHARS } from "@/lib/config";
 import { LANGUAGES, detectLanguage, languageLabel, type LanguageId } from "@/lib/language";
 import { cn } from "@/lib/utils";
-import type { Etapa } from "@/schemas/analysis";
+import { ETAPAS, type Etapa } from "@/schemas/analysis";
 import type { NivelUsuario } from "@/schemas/common";
 
 type Fuente = "pegar" | "archivo" | "gist";
@@ -26,7 +26,7 @@ interface GistArchivo {
   contenido: string;
 }
 
-const ETAPAS_INICIALES: Record<Etapa, EstadoEtapa> = { resumen: "pendiente", lineas: "pendiente", diagrama: "pendiente" };
+const ETAPAS_INICIALES = Object.fromEntries(ETAPAS.map((e) => [e, "pendiente"])) as Record<Etapa, EstadoEtapa>;
 const EXTENSIONES = ".js,.jsx,.mjs,.cjs,.ts,.tsx,.py,.java,.cs,.php,.sql,.html,.htm,.css,.txt";
 
 export function AnalyzeForm({ nivelInicial }: { nivelInicial: NivelUsuario }) {
