@@ -28,7 +28,8 @@ export function extraerJson(texto: string): string {
 /**
  * Pide JSON estricto al LLM, lo valida con Zod (+ validación semántica opcional) y,
  * si falla, reintenta incluyendo el error concreto en el prompt.
- * Los errores de proveedor (límite, clave, timeout) NO se reintentan aquí: no los arregla un nuevo prompt.
+ * Los errores de proveedor (límite, clave, timeout) NO se reintentan aquí: no los arregla un nuevo prompt
+ * (de eso se encarga el proveedor de respaldo). Las respuestas vacías o sin JSON sí se reintentan.
  */
 export async function generateJson<T>(opts: GenerateJsonOptions<T>): Promise<{ data: T; intentos: number }> {
   const maxRetries = opts.maxRetries ?? 2;
@@ -36,24 +37,29 @@ export async function generateJson<T>(opts: GenerateJsonOptions<T>): Promise<{ d
   let ultimoProblema = "";
 
   for (let intento = 0; intento <= maxRetries; intento++) {
-    const respuesta = await opts.provider.generate({
-      system: opts.system,
-      prompt,
-      json: true,
-      temperature: opts.temperature,
-      maxOutputTokens: opts.maxOutputTokens,
-    });
-
     const problemas: string[] = [];
     let candidato: unknown;
     try {
-      candidato = JSON.parse(extraerJson(respuesta.text));
-    } catch {
-      problemas.push(
-        respuesta.finishReason === "MAX_TOKENS"
-          ? "La respuesta se cortó por longitud y el JSON quedó incompleto. Sé más conciso."
-          : "La respuesta no es JSON válido.",
-      );
+      const respuesta = await opts.provider.generate({
+        system: opts.system,
+        prompt,
+        json: true,
+        temperature: opts.temperature,
+        maxOutputTokens: opts.maxOutputTokens,
+      });
+      try {
+        candidato = JSON.parse(extraerJson(respuesta.text));
+      } catch {
+        problemas.push(
+          respuesta.finishReason === "MAX_TOKENS"
+            ? "La respuesta se cortó por longitud y el JSON quedó incompleto. Sé más conciso."
+            : "La respuesta no es JSON válido.",
+        );
+      }
+    } catch (e) {
+      // Respuesta vacía o JSON rechazado por el proveedor: es un fallo de FORMATO y sí se reintenta.
+      if (!(e instanceof LLMError) || e.code !== "BAD_RESPONSE") throw e;
+      problemas.push("La respuesta llegó vacía o no era JSON válido.");
     }
 
     if (problemas.length === 0) {
