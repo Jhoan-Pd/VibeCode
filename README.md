@@ -2,12 +2,12 @@
 
 > Entiende el código que generó la IA: explicación línea por línea, diagramas de flujo y (próximamente) auditoría y quiz de comprensión.
 
-Proyecto final de **Programación Orientada a la Web**. Estado actual: **Fase 1 de 3**.
+Proyecto final de **Programación Orientada a la Web**. Estado actual: **Fase 2 de 3**.
 
 | Fase | Contenido | Estado |
 |------|-----------|--------|
 | 1 | Auth, BD, editor Monaco, Gemini, resumen + explicación línea por línea sincronizada, diagrama de flujo, historial, despliegue | Hecha |
-| 2 | Quiz con calificación, auditoría de vibe code, glosario, caché y rate limiting | Pendiente |
+| 2 | Quiz con calificación, auditoría de vibe code, glosario, diagramas de clases y secuencia, caché y rate limiting | Hecha |
 | 3 | Chat contextual, dashboard de progreso, exportar/compartir, respaldo Groq, tests completos, README final | Pendiente |
 
 ## El problema
@@ -162,6 +162,9 @@ Abre http://localhost:3100 si usas el puerto del ejemplo, o http://localhost:300
 | `GEMINI_MODEL` | No | Por defecto `gemini-3.5-flash-lite`. |
 | `NEXT_PUBLIC_MAX_CODE_CHARS` | No | Tamaño máximo del código (20000 por defecto). |
 | `LLM_CHUNK_LINES` | No | Líneas por bloque al dividir código largo (120). |
+| `DAILY_ANALYSIS_LIMIT` | No | Análisis nuevos por usuario y día (10). Los de caché no cuentan. |
+| `DAILY_AI_QUERIES_LIMIT` | No | Regenerar, quiz nuevo, corregir diagrama y chat por usuario y día (60). |
+| `APP_TIMEZONE` | No | Zona horaria del reinicio diario (`America/Bogota`). |
 | `GITHUB_TOKEN` | No | Sube el límite de la API de GitHub al importar Gists. |
 
 ## Pruebas
@@ -174,6 +177,4 @@ Ver [docs/GUIA-DESPLIEGUE.md](docs/GUIA-DESPLIEGUE.md): Supabase o Neon, Gemini,
 
 ## Límites conocidos de la Fase 1
 
-- Aún no hay límite diario de análisis ni caché por hash (Fase 2); el hash ya se guarda.
 - No hay limitación de intentos de login (conviene añadirla antes de un uso público amplio).
-- El diagrama de clases y el de secuencia llegan en la Fase 2.
