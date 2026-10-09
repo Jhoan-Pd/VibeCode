@@ -1,6 +1,6 @@
 {
   "name": "vibedecoder",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "description": "VibeDecoder: entiende el código que generó la IA (explicación línea por línea, diagramas, auditoría y quiz).",
   "engines": {
