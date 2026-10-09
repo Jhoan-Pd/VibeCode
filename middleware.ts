@@ -4,7 +4,7 @@ import { authConfig } from "./auth.config";
 
 const { auth } = NextAuth(authConfig);
 
-const PAGINAS_PROTEGIDAS = ["/dashboard", "/analyze", "/analysis", "/perfil"];
+const PAGINAS_PROTEGIDAS = ["/dashboard", "/progreso", "/analyze", "/analysis", "/perfil"];
 const API_PROTEGIDAS = ["/api/analyze", "/api/analysis", "/api/gist", "/api/perfil"];
 const PAGINAS_SOLO_INVITADOS = ["/login", "/register"];
 
@@ -36,5 +36,5 @@ export default auth((req) => {
 });
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/analyze/:path*", "/analysis/:path*", "/perfil/:path*", "/login", "/register", "/api/analyze/:path*", "/api/analysis/:path*", "/api/gist/:path*", "/api/perfil/:path*"],
+  matcher: ["/dashboard/:path*", "/progreso/:path*", "/analyze/:path*", "/analysis/:path*", "/perfil/:path*", "/login", "/register", "/api/analyze/:path*", "/api/analysis/:path*", "/api/gist/:path*", "/api/perfil/:path*"],
 };

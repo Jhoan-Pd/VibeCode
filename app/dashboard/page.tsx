@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { FileCode2, Plus } from "lucide-react";
+import { FileCode2, Plus, TrendingUp } from "lucide-react";
 import { auth } from "@/auth";
 import { DeleteAnalysisButton } from "@/components/delete-analysis-button";
 import { Badge } from "@/components/ui/badge";
@@ -42,11 +42,18 @@ export default async function DashboardPage() {
             {analisis.length === 0 ? "Aún no has analizado nada." : `${analisis.length} análisis guardado${analisis.length === 1 ? "" : "s"}.`}
           </p>
         </div>
-        <Button asChild>
-          <Link href="/analyze">
-            <Plus /> Nuevo análisis
-          </Link>
-        </Button>
+        <div className="flex gap-2">
+          <Button asChild variant="outline">
+            <Link href="/progreso">
+              <TrendingUp /> Mi progreso
+            </Link>
+          </Button>
+          <Button asChild>
+            <Link href="/analyze">
+              <Plus /> Nuevo análisis
+            </Link>
+          </Button>
+        </div>
       </div>
 
       {analisis.length === 0 ? (

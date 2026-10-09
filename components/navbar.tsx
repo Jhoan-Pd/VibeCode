@@ -24,6 +24,9 @@ export async function Navbar() {
               <Button asChild variant="ghost" size="sm" className="hidden sm:inline-flex">
                 <Link href="/dashboard">Historial</Link>
               </Button>
+              <Button asChild variant="ghost" size="sm" className="hidden sm:inline-flex">
+                <Link href="/progreso">Progreso</Link>
+              </Button>
               <Button asChild size="sm">
                 <Link href="/analyze">Nuevo análisis</Link>
               </Button>
