@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Alert } from "@/components/ui/misc";
 import { languageLabel } from "@/lib/language";
+import { rangoDesdeParametro } from "@/lib/rango";
 import { formatearFecha } from "@/lib/utils";
 import type { Etapa } from "@/schemas/analysis";
 import { NIVEL_INFO } from "@/schemas/common";
@@ -32,16 +33,6 @@ const TEXTO_REGENERAR: Record<Etapa, string> = {
   auditoria: "Auditar código",
   quiz: "Generar quiz",
 };
-
-/** "?l=3-9" o "?l=4" → rango válido dentro del archivo; cualquier otra cosa se ignora. */
-function rangoDesdeParametro(valor: string | undefined, totalLineas: number) {
-  const m = valor?.match(/^(\d{1,6})(?:-(\d{1,6}))?$/);
-  if (!m) return null;
-  const inicio = Number(m[1]);
-  const fin = Number(m[2] ?? m[1]);
-  if (inicio < 1 || fin < inicio || inicio > totalLineas) return null;
-  return { inicio, fin: Math.min(fin, totalLineas) };
-}
 
 export default async function AnalysisPage({
   params,
