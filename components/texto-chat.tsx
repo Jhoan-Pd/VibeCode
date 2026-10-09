@@ -56,20 +56,7 @@ function bloquesDeTexto(texto: string) {
     });
 }
 
-/** **negrita** + `código` en línea. */
+/** **negrita** + `código` en línea (TextoConCodigo ya entiende ambos). */
 function EnLinea({ texto }: { texto: string }) {
-  const partes = texto.split(/\*\*([^*]+)\*\*/g);
-  return (
-    <>
-      {partes.map((p, i) =>
-        i % 2 === 1 ? (
-          <strong key={i} className="font-semibold text-foreground">
-            <TextoConCodigo texto={p} />
-          </strong>
-        ) : (
-          <TextoConCodigo key={i} texto={p} />
-        ),
-      )}
-    </>
-  );
+  return <TextoConCodigo texto={texto} />;
 }
