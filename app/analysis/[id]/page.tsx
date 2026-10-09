@@ -14,6 +14,7 @@ import { languageLabel } from "@/lib/language";
 import { formatearFecha } from "@/lib/utils";
 import type { Etapa } from "@/schemas/analysis";
 import { NIVEL_INFO } from "@/schemas/common";
+import { listarMensajes } from "@/services/chat.service";
 import { cargarAnalisis } from "@/services/vista.service";
 
 export const metadata: Metadata = { title: "Resultado del análisis" };
@@ -46,6 +47,7 @@ export default async function AnalysisPage({
   const cargado = await cargarAnalisis({ id, usuarioId: session.user.id }, { usuarioQuiz: session.user.id, incluirQuiz: true });
   if (!cargado) notFound();
   const { analisis, vista } = cargado;
+  const mensajesChat = await listarMensajes(analisis.id, session.user.id);
 
   const minutos = (Date.now() - analisis.creadoEn.getTime()) / 60_000;
   const procesando = analisis.estado === "PROCESANDO" && minutos < MINUTOS_PARA_CONSIDERAR_ATASCADO;
@@ -112,7 +114,7 @@ export default async function AnalysisPage({
         </Alert>
       )}
 
-      <AnalysisViewer analisisId={analisis.id} datos={vista} auditado={analisis.auditadoEn !== null} />
+      <AnalysisViewer analisisId={analisis.id} datos={vista} auditado={analisis.auditadoEn !== null} mensajesChat={mensajesChat} />
     </div>
   );
 }

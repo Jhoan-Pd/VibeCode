@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Monaco } from "@monaco-editor/react";
 import type { editor as MonacoNS } from "monaco-editor";
-import { BookMarked, BookOpen, Code2, FileInput, FileOutput, GitBranch, GraduationCap, Package, ShieldAlert } from "lucide-react";
+import { BookMarked, BookOpen, Code2, FileInput, FileOutput, GitBranch, GraduationCap, MessageCircleQuestion, Package, ShieldAlert } from "lucide-react";
 import { MonacoEditor, OPCIONES_VISOR } from "@/components/code-editor";
 import { RegenerarEtapa } from "@/components/regenerar-etapa";
 import { TextoConCodigo } from "@/components/texto-con-codigo";
@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs } from "@/components/ui/misc";
 import { AuditoriaPanel } from "@/components/viewer/auditoria-panel";
+import { ChatPanel, type Seleccion } from "@/components/viewer/chat-panel";
 import { DiagramasPanel } from "@/components/viewer/diagramas-panel";
 import { GlosarioPanel } from "@/components/viewer/glosario-panel";
 import { QuizPanel, type QuizPanelProps } from "@/components/viewer/quiz-panel";
@@ -18,6 +19,7 @@ import { useIsDark } from "@/hooks/use-is-dark";
 import { cn } from "@/lib/utils";
 import { languageLabel } from "@/lib/language";
 import type { Resumen } from "@/schemas/analysis";
+import type { MensajeChatVista } from "@/schemas/chat";
 import type { AnalisisVista } from "@/schemas/vista";
 
 export interface AnalysisViewerProps {
@@ -28,14 +30,17 @@ export interface AnalysisViewerProps {
   auditado?: boolean;
   /** Solo la demo: califica el quiz en el navegador. */
   calificarLocal?: QuizPanelProps["calificarLocal"];
-  /** Vista pública de solo lectura: oculta el quiz. */
+  /** Vista pública de solo lectura: oculta el quiz y el chat. */
   soloLectura?: boolean;
+  /** Conversación previa del chat contextual (solo análisis propios). */
+  mensajesChat?: MensajeChatVista[];
 }
 
 type Pestana = "codigo" | "diagramas" | "glosario" | "auditoria" | "quiz";
+type PanelDerecho = "explicacion" | "chat";
 type Origen = "panel" | "editor";
 
-export function AnalysisViewer({ datos, analisisId, auditado = true, calificarLocal, soloLectura = false }: AnalysisViewerProps) {
+export function AnalysisViewer({ datos, analisisId, auditado = true, calificarLocal, soloLectura = false, mensajesChat = [] }: AnalysisViewerProps) {
   const { codigo, lenguaje, resumen, bloques, diagramas, conceptos, hallazgos, quiz } = datos;
   const oscuro = useIsDark();
   const [pestana, setPestana] = useState<Pestana>("codigo");
@@ -43,6 +48,9 @@ export function AnalysisViewer({ datos, analisisId, auditado = true, calificarLo
   /** Rango resaltado desde el glosario, la auditoría o el quiz (distinto de los bloques). */
   const [foco, setFoco] = useState<{ inicio: number; fin: number; n: number } | null>(null);
   const [editorListo, setEditorListo] = useState(false);
+  const [panel, setPanel] = useState<PanelDerecho>("explicacion");
+  /** Líneas seleccionadas en el editor: contexto del chat. */
+  const [seleccion, setSeleccion] = useState<Seleccion>(null);
 
   const editorRef = useRef<MonacoNS.IStandaloneCodeEditor | null>(null);
   const monacoRef = useRef<Monaco | null>(null);
@@ -84,6 +92,14 @@ export function AnalysisViewer({ datos, analisisId, auditado = true, calificarLo
       decoracionesRef.current = editor.createDecorationsCollection([]);
 
       // Editor -> panel: al pasar el mouse por una línea se activa su explicación.
+      // Selección en el editor -> contexto del chat (si la selección termina al inicio de una línea, esa línea no cuenta).
+      editor.onDidChangeCursorSelection((e) => {
+        const s = e.selection;
+        if (s.isEmpty()) return;
+        const fin = s.endColumn === 1 && s.endLineNumber > s.startLineNumber ? s.endLineNumber - 1 : s.endLineNumber;
+        setSeleccion({ inicio: s.startLineNumber, fin });
+      });
+
       editor.onMouseMove((e) => {
         const linea = e.target.position?.lineNumber;
         if (!linea) return;
@@ -174,7 +190,33 @@ export function AnalysisViewer({ datos, analisisId, auditado = true, calificarLo
               </div>
             </Card>
 
-            <div className="space-y-3 lg:h-[calc(70vh+37px)] lg:overflow-y-auto lg:pr-1" aria-label="Explicaciones por bloque">
+            <div className="space-y-3">
+              {!soloLectura && (
+                <Tabs
+                  value={panel}
+                  onChange={setPanel}
+                  className="h-9"
+                  items={[
+                    { id: "explicacion", label: <>Explicación</> },
+                    { id: "chat", label: <><MessageCircleQuestion className="size-4" /> Preguntar a la IA</> },
+                  ]}
+                />
+              )}
+              {panel === "chat" && !soloLectura ? (
+                <div className="h-[60vh] lg:h-[calc(70vh-11px)]">
+                  <ChatPanel
+                    analisisId={analisisId}
+                    mensajesIniciales={mensajesChat}
+                    seleccion={seleccion}
+                    limpiarSeleccion={() => setSeleccion(null)}
+                    irALineas={irALineas}
+                  />
+                </div>
+              ) : (
+            <div
+              className={cn("space-y-3 lg:overflow-y-auto lg:pr-1", soloLectura ? "lg:h-[calc(70vh+37px)]" : "lg:h-[calc(70vh-11px)]")}
+              aria-label="Explicaciones por bloque"
+            >
               {bloques.length === 0 ? (
                 <Card>
                   <CardContent className="space-y-3 p-6 text-sm text-muted-foreground">
@@ -208,14 +250,30 @@ export function AnalysisViewer({ datos, analisisId, auditado = true, calificarLo
                     <p className="text-sm leading-relaxed text-muted-foreground">
                       <TextoConCodigo texto={b.explicacion} />
                     </p>
+                    {!soloLectura && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSeleccion({ inicio: b.lineaInicio, fin: b.lineaFin });
+                          setPanel("chat");
+                        }}
+                        className="mt-2 inline-flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-primary"
+                      >
+                        <MessageCircleQuestion className="size-3.5" /> Preguntar sobre estas líneas
+                      </button>
+                    )}
                   </article>
                 ))
+              )}
+            </div>
               )}
             </div>
           </div>
           {bloques.length > 0 && (
             <p className="mt-3 text-xs text-muted-foreground">
               Pasa el mouse sobre una explicación para resaltar sus líneas en el editor, o sobre el código para ver su explicación.
+              {!soloLectura && " Selecciona líneas en el editor para preguntarle a la IA sobre ellas."}
             </p>
           )}
         </div>
