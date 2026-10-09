@@ -32,14 +32,24 @@ const TEXTO_REGENERAR: Record<Etapa, string> = {
   quiz: "Generar quiz",
 };
 
+/** "?l=3-9" o "?l=4" → rango válido dentro del archivo; cualquier otra cosa se ignora. */
+function rangoDesdeParametro(valor: string | undefined, totalLineas: number) {
+  const m = valor?.match(/^(\d{1,6})(?:-(\d{1,6}))?$/);
+  if (!m) return null;
+  const inicio = Number(m[1]);
+  const fin = Number(m[2] ?? m[1]);
+  if (inicio < 1 || fin < inicio || inicio > totalLineas) return null;
+  return { inicio, fin: Math.min(fin, totalLineas) };
+}
+
 export default async function AnalysisPage({
   params,
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ cache?: string }>;
+  searchParams: Promise<{ cache?: string; l?: string }>;
 }) {
-  const [{ id }, { cache }] = await Promise.all([params, searchParams]);
+  const [{ id }, { cache, l }] = await Promise.all([params, searchParams]);
   const session = await auth();
   if (!session?.user?.id) redirect(`/login?callbackUrl=/analysis/${id}`);
 
@@ -48,6 +58,7 @@ export default async function AnalysisPage({
   if (!cargado) notFound();
   const { analisis, vista } = cargado;
   const mensajesChat = await listarMensajes(analisis.id, session.user.id);
+  const focoInicial = rangoDesdeParametro(l, vista.codigo.split("\n").length);
 
   const minutos = (Date.now() - analisis.creadoEn.getTime()) / 60_000;
   const procesando = analisis.estado === "PROCESANDO" && minutos < MINUTOS_PARA_CONSIDERAR_ATASCADO;
@@ -114,7 +125,7 @@ export default async function AnalysisPage({
         </Alert>
       )}
 
-      <AnalysisViewer analisisId={analisis.id} datos={vista} auditado={analisis.auditadoEn !== null} mensajesChat={mensajesChat} />
+      <AnalysisViewer analisisId={analisis.id} datos={vista} auditado={analisis.auditadoEn !== null} mensajesChat={mensajesChat} focoInicial={focoInicial} />
     </div>
   );
 }

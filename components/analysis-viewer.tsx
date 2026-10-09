@@ -34,19 +34,21 @@ export interface AnalysisViewerProps {
   soloLectura?: boolean;
   /** Conversación previa del chat contextual (solo análisis propios). */
   mensajesChat?: MensajeChatVista[];
+  /** Rango a resaltar al abrir (enlaces "repasar" del dashboard de progreso: ?l=3-9). */
+  focoInicial?: { inicio: number; fin: number } | null;
 }
 
 type Pestana = "codigo" | "diagramas" | "glosario" | "auditoria" | "quiz";
 type PanelDerecho = "explicacion" | "chat";
 type Origen = "panel" | "editor";
 
-export function AnalysisViewer({ datos, analisisId, auditado = true, calificarLocal, soloLectura = false, mensajesChat = [] }: AnalysisViewerProps) {
+export function AnalysisViewer({ datos, analisisId, auditado = true, calificarLocal, soloLectura = false, mensajesChat = [], focoInicial = null }: AnalysisViewerProps) {
   const { codigo, lenguaje, resumen, bloques, diagramas, conceptos, hallazgos, quiz } = datos;
   const oscuro = useIsDark();
   const [pestana, setPestana] = useState<Pestana>("codigo");
   const [activo, setActivo] = useState<number | null>(null);
   /** Rango resaltado desde el glosario, la auditoría o el quiz (distinto de los bloques). */
-  const [foco, setFoco] = useState<{ inicio: number; fin: number; n: number } | null>(null);
+  const [foco, setFoco] = useState<{ inicio: number; fin: number; n: number } | null>(focoInicial ? { ...focoInicial, n: 0 } : null);
   const [editorListo, setEditorListo] = useState(false);
   const [panel, setPanel] = useState<PanelDerecho>("explicacion");
   /** Líneas seleccionadas en el editor: contexto del chat. */
