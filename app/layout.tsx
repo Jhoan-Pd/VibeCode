@@ -23,7 +23,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <body className="min-h-screen font-sans">
         <Navbar />
         <main>{children}</main>
-        <footer className="mt-24 border-t py-8 text-center text-sm text-muted-foreground">
+        <footer className="mt-24 border-t py-8 text-center text-sm text-muted-foreground print:hidden">
           VibeDecoder · Proyecto final de Programación Orientada a la Web
         </footer>
       </body>

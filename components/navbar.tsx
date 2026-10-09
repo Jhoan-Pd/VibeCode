@@ -9,7 +9,7 @@ export async function Navbar() {
   const usuario = session?.user;
 
   return (
-    <header className="sticky top-0 z-40 border-b bg-background/80 backdrop-blur">
+    <header className="sticky top-0 z-40 border-b bg-background/80 backdrop-blur print:hidden">
       <div className="container flex h-14 items-center justify-between gap-2">
         <Link href="/" className="flex items-center gap-2 font-semibold tracking-tight">
           <span className="flex size-7 items-center justify-center rounded-md bg-primary text-primary-foreground">

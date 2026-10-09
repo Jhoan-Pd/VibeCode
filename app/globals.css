@@ -108,3 +108,16 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Impresión / "Guardar como PDF": márgenes de página y sin fondos oscuros ni sombras. */
+@media print {
+  @page {
+    margin: 16mm 14mm;
+  }
+  body {
+    background: white;
+  }
+  * {
+    box-shadow: none !important;
+  }
+}

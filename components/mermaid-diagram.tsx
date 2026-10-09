@@ -140,7 +140,7 @@ export function MermaidDiagram({ codigo, analisisId, tipo = "FLUJO" }: { codigo:
         </Alert>
       )}
 
-      <details className="rounded-md border bg-muted/40 text-sm">
+      <details className="rounded-md border bg-muted/40 text-sm print:hidden">
         <summary className="cursor-pointer select-none px-3 py-2 text-muted-foreground">Ver código Mermaid</summary>
         <div className="relative border-t">
           <Button variant="ghost" size="sm" className="absolute right-2 top-2" onClick={copiar}>
