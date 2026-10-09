@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { auth } from "@/auth";
+import { AccionesAnalisis } from "@/components/acciones-analisis";
 import { AnalysisViewer } from "@/components/analysis-viewer";
 import { AutoRefresh } from "@/components/auto-refresh";
 import { DeleteAnalysisButton } from "@/components/delete-analysis-button";
@@ -93,7 +94,10 @@ export default async function AnalysisPage({
               <span>{formatearFecha(analisis.creadoEn)}</span>
             </div>
           </div>
-          <DeleteAnalysisButton id={analisis.id} redirigirA="/dashboard" />
+          <div className="flex flex-wrap items-center gap-2">
+            <AccionesAnalisis analisisId={analisis.id} tokenInicial={analisis.tokenPublico} />
+            <DeleteAnalysisButton id={analisis.id} redirigirA="/dashboard" />
+          </div>
         </div>
       </div>
 
