@@ -282,7 +282,9 @@ function PreguntaCard({
           <div className={cn("flex gap-2 rounded-md p-3 text-sm", resultado.correcta ? "bg-emerald-500/10" : "bg-destructive/10")}>
             {resultado.correcta ? <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-emerald-500" /> : <XCircle className="mt-0.5 size-4 shrink-0 text-destructive" />}
             <div className="space-y-1">
-              <p className="font-medium">{resultado.correcta ? "Correcto" : `Incorrecto. Respuesta correcta: ${describirRespuesta(p, resultado.respuestaCorrecta)}`}</p>
+              <p className="font-medium">
+                {resultado.correcta ? "Correcto" : <TextoConCodigo texto={`Incorrecto. Respuesta correcta: ${describirRespuesta(p, resultado.respuestaCorrecta)}`} />}
+              </p>
               <p className="text-muted-foreground">
                 <TextoConCodigo texto={resultado.explicacion} />
               </p>
