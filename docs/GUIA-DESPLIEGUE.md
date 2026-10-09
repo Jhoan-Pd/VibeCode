@@ -1,6 +1,6 @@
-# Guía de despliegue: Gemini + Supabase (o Neon) + GitHub OAuth + Vercel
+# Guía de despliegue: Gemini + Groq + Supabase (o Neon) + GitHub OAuth + Vercel
 
-Orden recomendado: 1) clave de Gemini, 2) base de datos, 3) probar en local, 4) GitHub (repo y OAuth), 5) Vercel.
+Orden recomendado: 1) claves de IA, 2) base de datos, 3) probar en local, 4) GitHub (repo y OAuth), 5) Vercel.
 
 ## 1. API key gratuita de Gemini
 
@@ -8,6 +8,12 @@ Orden recomendado: 1) clave de Gemini, 2) base de datos, 3) probar en local, 4) 
 2. Pulsa **Create API key** (elige o crea un proyecto) y copia la clave.
 3. Pégala en `GEMINI_API_KEY`.
 4. El modelo se define en `GEMINI_MODEL`. Los nombres y las cuotas gratuitas cambian: en https://ai.google.dev/gemini-api/docs/models y en AI Studio (Rate limits) ves qué modelos tienes disponibles. Si la app responde que no encuentra el modelo o que superaste la cuota, cambia `GEMINI_MODEL` por otro modelo Flash o Flash-Lite disponible para ti.
+
+### Groq como respaldo (opcional, recomendado)
+
+1. Entra a https://console.groq.com/keys, crea una cuenta gratuita y pulsa **Create API Key**.
+2. Pégala en `GROQ_API_KEY`. El modelo se define en `GROQ_MODEL` (por defecto `openai/gpt-oss-20b`); revisa los disponibles en https://console.groq.com/docs/models.
+3. Con las dos claves, si Gemini falla por cuota, caída, timeout o modelo inexistente, la misma petición se repite con Groq automáticamente. Para usar Groq como principal pon `LLM_PROVIDER="groq"`; para desactivar el respaldo, `LLM_FALLBACK="none"`.
 
 ## 2. Base de datos
 
@@ -33,6 +39,8 @@ npx prisma db push
 ```
 
 Comprueba en el panel de la BD (Table Editor / Tables) que existen las 12 tablas.
+
+Si ya habías creado las tablas con una versión anterior del proyecto, ejecuta `npx prisma db push` otra vez: las fases 2 y 3 añadieron columnas (`analisis.auditadoEn`, `analisis.origenCacheId`, `uso_diario.consultasIA`). Solo agrega columnas; no borra datos.
 
 ## 3. Probar en local
 
@@ -85,7 +93,10 @@ Genera un **Client secret** en cada una. Local: `AUTH_GITHUB_ID` y `AUTH_GITHUB_
 | `AUTH_GITHUB_ID` / `AUTH_GITHUB_SECRET` | de la OAuth App **de producción** |
 | `GEMINI_API_KEY` | tu clave |
 | `GEMINI_MODEL` | el modelo que te funcionó en local |
+| `GROQ_API_KEY` | tu clave de Groq (opcional, respaldo) |
+| `GROQ_MODEL` | `openai/gpt-oss-20b` u otro disponible |
 | `LLM_PROVIDER` | `gemini` |
+| `DAILY_ANALYSIS_LIMIT` / `DAILY_AI_QUERIES_LIMIT` | opcionales: `10` y `60` por defecto |
 
 4. Pulsa **Deploy**. Cuando termine tendrás la URL `https://TU-APP.vercel.app`.
 5. Crea la OAuth App de producción con esa URL (paso 4) y actualiza `AUTH_GITHUB_ID` y `AUTH_GITHUB_SECRET` en Vercel (Settings → Environment Variables), luego **Redeploy**.
@@ -97,6 +108,8 @@ Genera un **Client secret** en cada una. Local: `AUTH_GITHUB_ID` y `AUTH_GITHUB_
 - Registro y login por correo funcionan.
 - Un análisis nuevo termina y aparece en el historial.
 - Login con GitHub funciona.
+- El quiz se califica, la pregunta aparece en **Progreso** y el chat responde.
+- **Markdown** descarga un `.md`, **PDF** abre la vista para imprimir y **Compartir** crea un enlace que abre en una ventana privada sin iniciar sesión.
 
 ### Problemas frecuentes
 
@@ -107,5 +120,8 @@ Genera un **Client secret** en cada una. Local: `AUTH_GITHUB_ID` y `AUTH_GITHUB_
 | Errores de *prepared statement* | Usa el session pooler (5432) también en `DATABASE_URL`. |
 | Login con GitHub: `redirect_uri_mismatch` | La callback de la OAuth App no coincide exactamente con la URL del sitio. |
 | `Configuration` / `MissingSecret` | Falta `AUTH_SECRET` en Vercel. |
-| El análisis dice «límite gratuito» | Se agotó la cuota por minuto o día de Gemini: espera, o cambia `GEMINI_MODEL`. |
+| El análisis dice «límite gratuito» | Se agotó la cuota por minuto o día de Gemini: espera, cambia `GEMINI_MODEL` o configura `GROQ_API_KEY` como respaldo. |
+| «Llegaste al límite de N análisis por día» | Es el límite propio de la app: sube `DAILY_ANALYSIS_LIMIT` o espera al día siguiente (zona `APP_TIMEZONE`). |
+| Error `column ... does not exist` | La BD es de una versión anterior: ejecuta `npx prisma db push`. |
+| El enlace público muestra «no encontrado» | El análisis se borró o se dejó de compartir; crea un enlace nuevo. |
 | El análisis tarda más de 60 s | Reduce el código o baja `LLM_CHUNK_LINES`; las rutas tienen `maxDuration = 60`. |
