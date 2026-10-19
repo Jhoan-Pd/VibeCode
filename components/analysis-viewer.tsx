@@ -174,7 +174,7 @@ export function AnalysisViewer({ datos, analisisId, auditado = true, calificarLo
         />
 
         {/* Se mantienen montados los dos paneles (con `hidden`) para no recargar Monaco al cambiar de pestaña. */}
-        <div ref={codigoRef} className={cn("scroll-mt-20", pestana !== "codigo" && "hidden")}>
+        <div ref={codigoRef} className={cn("vd-fade scroll-mt-20", pestana !== "codigo" && "hidden")}>
           <div className="grid gap-4 lg:grid-cols-2">
             <Card className="overflow-hidden">
               <div className="flex items-center justify-between border-b px-4 py-2 text-xs text-muted-foreground">
@@ -280,17 +280,25 @@ export function AnalysisViewer({ datos, analisisId, auditado = true, calificarLo
           )}
         </div>
 
-        <div className={cn(pestana !== "diagramas" && "hidden")}>
+        <div className={cn("vd-fade", pestana !== "diagramas" && "hidden")}>
           <DiagramasPanel diagramas={diagramas} analisisId={analisisId} />
         </div>
 
-        {pestana === "glosario" && <GlosarioPanel conceptos={conceptos} irALineas={irALineas} analisisId={analisisId} />}
+        {pestana === "glosario" && (
+          <div className="vd-fade">
+            <GlosarioPanel conceptos={conceptos} irALineas={irALineas} analisisId={analisisId} />
+          </div>
+        )}
 
-        {pestana === "auditoria" && <AuditoriaPanel hallazgos={hallazgos} auditado={auditado} irALineas={irALineas} analisisId={analisisId} />}
+        {pestana === "auditoria" && (
+          <div className="vd-fade">
+            <AuditoriaPanel hallazgos={hallazgos} auditado={auditado} irALineas={irALineas} analisisId={analisisId} />
+          </div>
+        )}
 
         {/* El quiz se mantiene montado para no perder las respuestas al consultar el código. */}
         {!soloLectura && (
-          <div className={cn(pestana !== "quiz" && "hidden")}>
+          <div className={cn("vd-fade", pestana !== "quiz" && "hidden")}>
             <QuizPanel key={quiz?.id ?? "sin-quiz"} quiz={quiz} irALineas={irALineas} analisisId={analisisId} calificarLocal={calificarLocal} />
           </div>
         )}
