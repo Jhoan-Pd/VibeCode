@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import { Navbar } from "@/components/navbar";
+import "@fontsource-variable/inter";
+import "@fontsource-variable/source-serif-4/opsz.css";
 import "./globals.css";
 
 export const metadata: Metadata = {

@@ -36,8 +36,9 @@ const config: Config = {
       },
       transitionTimingFunction: { "out-expo": "var(--ease-out-expo)", "out-soft": "var(--ease-out-soft)" },
       fontFamily: {
-        // Pila de fuentes del sistema: rápida, sin descargas y sin variables CSS que puedan quedar sin definir.
-        sans: ["ui-sans-serif", "system-ui", "-apple-system", "Segoe UI", "Roboto", "Helvetica Neue", "Arial", "sans-serif"],
+        // Fuentes autoalojadas con @fontsource (sin CDN). Si no cargan, se usa la pila del sistema.
+        sans: ["Inter Variable", "ui-sans-serif", "system-ui", "-apple-system", "Segoe UI", "Roboto", "Helvetica Neue", "Arial", "sans-serif"],
+        display: ["Source Serif 4 Variable", "Georgia", "Cambria", "Times New Roman", "serif"],
         mono: ["ui-monospace", "SFMono-Regular", "Menlo", "Consolas", "Liberation Mono", "monospace"],
       },
     },
