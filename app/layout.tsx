@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
+import { ObservadorRevelar } from "@/components/motion/observador-revelar";
 import { Navbar } from "@/components/navbar";
 import "@fontsource-variable/inter";
 import "@fontsource-variable/source-serif-4/opsz.css";
@@ -19,7 +20,8 @@ export const viewport: Viewport = {
 };
 
 // Aplica el tema guardado antes de pintar para evitar parpadeos. Claro por defecto; oscuro si la persona lo eligió.
-const scriptTema = `try{if(localStorage.getItem('vd-theme')==='dark')document.documentElement.classList.add('dark')}catch(e){}`;
+// La clase vd-js habilita las animaciones de aparición al hacer scroll (sin JS el contenido se ve normal).
+const scriptTema = `document.documentElement.classList.add('vd-js');try{if(localStorage.getItem('vd-theme')==='dark')document.documentElement.classList.add('dark')}catch(e){}`;
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
@@ -28,6 +30,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <script dangerouslySetInnerHTML={{ __html: scriptTema }} />
       </head>
       <body className="min-h-screen font-sans">
+        <ObservadorRevelar />
         <Navbar />
         <main>{children}</main>
         <footer className="mt-24 border-t py-8 text-center text-sm text-muted-foreground print:hidden">
