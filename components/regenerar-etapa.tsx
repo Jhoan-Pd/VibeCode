@@ -6,6 +6,7 @@ import { RefreshCw } from "lucide-react";
 import { Button, type ButtonProps } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/misc";
 import type { Etapa } from "@/schemas/analysis";
+import { SIN_CONEXION } from "@/lib/mensajes";
 
 /** Botón que vuelve a generar UNA etapa de un análisis (resumen, líneas o diagrama). */
 export function RegenerarEtapa({
@@ -34,7 +35,7 @@ export function RegenerarEtapa({
         router.refresh();
       }
     } catch {
-      setError("Sin conexión con el servidor.");
+      setError(SIN_CONEXION);
     } finally {
       setCargando(false);
     }

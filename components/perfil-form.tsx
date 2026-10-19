@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
 import { Alert, Spinner } from "@/components/ui/misc";
 import type { NivelUsuario } from "@/schemas/common";
+import { SIN_CONEXION } from "@/lib/mensajes";
 
 export function PerfilForm({ nombreInicial, nivelInicial, email }: { nombreInicial: string; nivelInicial: NivelUsuario; email: string }) {
   const router = useRouter();
@@ -33,7 +34,7 @@ export function PerfilForm({ nombreInicial, nivelInicial, email }: { nombreInici
         router.refresh();
       }
     } catch {
-      setMensaje({ tipo: "error", texto: "Sin conexión con el servidor." });
+      setMensaje({ tipo: "error", texto: SIN_CONEXION });
     } finally {
       setCargando(false);
     }

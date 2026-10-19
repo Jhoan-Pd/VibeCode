@@ -18,6 +18,7 @@ import { LANGUAGES, detectLanguage, languageLabel, type LanguageId } from "@/lib
 import { cn } from "@/lib/utils";
 import { ETAPAS, type Etapa } from "@/schemas/analysis";
 import type { NivelUsuario } from "@/schemas/common";
+import { SIN_CONEXION } from "@/lib/mensajes";
 
 type Fuente = "pegar" | "archivo" | "gist";
 type Fase = "editando" | "analizando" | "error";
@@ -100,7 +101,7 @@ export function AnalyzeForm({ nivelInicial, cupo }: { nivelInicial: NivelUsuario
       if (data.archivos.length === 1) cargarCodigo(data.archivos[0].contenido, data.archivos[0].nombre);
       else setGistArchivos(data.archivos);
     } catch {
-      setErrorFuente("Sin conexión con el servidor.");
+      setErrorFuente(SIN_CONEXION);
     } finally {
       setGistCargando(false);
     }

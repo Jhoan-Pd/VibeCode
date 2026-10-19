@@ -10,6 +10,7 @@ import { Alert, Spinner } from "@/components/ui/misc";
 import { cn } from "@/lib/utils";
 import { MAX_MENSAJE_CHAT, type MensajeChatVista } from "@/schemas/chat";
 import { BotonLineas, etiquetaLineas, type IrALineas } from "./boton-lineas";
+import { SIN_CONEXION } from "@/lib/mensajes";
 
 export type Seleccion = { inicio: number; fin: number } | null;
 
@@ -45,7 +46,7 @@ export function ChatPanel({ analisisId, mensajesIniciales, seleccion, limpiarSel
           Selecciona líneas en el editor y haz preguntas de seguimiento sobre ese fragmento. Disponible con una cuenta gratuita.
         </p>
         <Button asChild size="sm">
-          <Link href="/register">Crear cuenta</Link>
+          <Link href="/register">Crear cuenta gratis</Link>
         </Button>
       </Card>
     );
@@ -70,7 +71,7 @@ export function ChatPanel({ analisisId, mensajesIniciales, seleccion, limpiarSel
       setMensajes((prev) => [...prev, ...data.mensajes!]);
       setTexto("");
     } catch {
-      setError("Sin conexión con el servidor.");
+      setError(SIN_CONEXION);
     } finally {
       setEnviando(false);
     }

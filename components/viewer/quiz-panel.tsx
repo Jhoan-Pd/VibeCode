@@ -19,6 +19,7 @@ import {
 } from "@/schemas/quiz";
 import type { QuizVista } from "@/schemas/vista";
 import { BotonLineas, etiquetaLineas, type IrALineas } from "./boton-lineas";
+import { SIN_CONEXION } from "@/lib/mensajes";
 
 type Respuestas = Record<string, RespuestaValor | null>;
 
@@ -81,7 +82,7 @@ export function QuizPanel({ quiz, irALineas, analisisId, calificarLocal }: QuizP
       if (!res.ok) setError(data.error ?? "No se pudo calificar el quiz.");
       else setResultado(data);
     } catch {
-      setError("Sin conexión con el servidor.");
+      setError(SIN_CONEXION);
     } finally {
       setEnviando(false);
     }

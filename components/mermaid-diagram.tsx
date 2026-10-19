@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Alert, Skeleton, Spinner } from "@/components/ui/misc";
 import { useIsDark } from "@/hooks/use-is-dark";
 import type { TipoMermaid } from "@/lib/mermaid";
+import { SIN_CONEXION } from "@/lib/mensajes";
 
 const ETIQUETA: Record<TipoMermaid, string> = {
   FLUJO: "Diagrama de flujo del código",
@@ -89,7 +90,7 @@ export function MermaidDiagram({ codigo, analisisId, tipo = "FLUJO" }: { codigo:
         router.refresh();
       }
     } catch {
-      setErrorReparar("Sin conexión con el servidor.");
+      setErrorReparar(SIN_CONEXION);
     } finally {
       setReparando(false);
     }

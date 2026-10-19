@@ -6,6 +6,7 @@ import { Check, Copy, Download, Link2, Link2Off, Printer, Share2 } from "lucide-
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/misc";
+import { SIN_CONEXION } from "@/lib/mensajes";
 
 /** Exportar (Markdown / PDF) y compartir con enlace público de solo lectura. */
 export function AccionesAnalisis({ analisisId, tokenInicial }: { analisisId: string; tokenInicial: string | null }) {
@@ -32,7 +33,7 @@ export function AccionesAnalisis({ analisisId, tokenInicial }: { analisisId: str
       setToken(metodo === "POST" ? (data.token ?? null) : null);
       setCopiado(false);
     } catch {
-      setError("Sin conexión con el servidor.");
+      setError(SIN_CONEXION);
     } finally {
       setCargando(false);
     }
