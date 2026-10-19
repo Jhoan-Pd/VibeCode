@@ -48,7 +48,11 @@ Las capturas de la demo usan el análisis precalculado de la landing. Las de cha
 
 ## Stack
 
-Next.js 15 (App Router) · TypeScript · TailwindCSS 3 + componentes estilo shadcn/ui · Monaco Editor · Mermaid · Auth.js v5 · Prisma 7 + PostgreSQL (Supabase o Neon) · Zod · Vitest · Google Gemini (principal) y Groq (respaldo) · Vercel.
+Next.js 15 (App Router) · TypeScript · TailwindCSS 3 + componentes estilo shadcn/ui · Monaco Editor · Mermaid · Auth.js v5 · Prisma 7 + PostgreSQL (Supabase o Neon) · Zod · Vitest · Google Gemini (principal) y Groq (respaldo) · Vercel. Tipografía Inter y Source Serif 4 (autoalojadas con @fontsource).
+
+## Diseño de la interfaz
+
+Paleta clara con títulos en serif, un único azul para las acciones y animaciones cortas de entrada. Los tokens de color, las sombras, la tipografía y cada animación (disparador, duración y curva) están documentados en [docs/HANDOFF-UI.md](docs/HANDOFF-UI.md).
 
 ## Arquitectura
 
@@ -181,6 +185,8 @@ Ver [docs/ER.md](docs/ER.md) (12 tablas: `usuarios`, `analisis`, `explicaciones_
 | Gráfica de progreso en SVG propio | Una sola serie no justifica una librería de gráficos; incluye tooltip, foco con teclado y tabla alternativa. |
 | PDF con el diálogo de impresión | Sin Puppeteer ni librerías pesadas en el servidor. |
 | Demo precalculada | La landing funciona sin login y sin gastar cuota del LLM. |
+| Fuentes autoalojadas (@fontsource) | Sin CDN de fuentes ni llamadas a terceros; Inter y Source Serif 4 son libres (OFL). |
+| Animaciones en CSS + un observador | Sin librerías de animación: keyframes cortos, `IntersectionObserver` para la aparición al hacer scroll y respeto a «reducir movimiento». |
 | Prompt injection | El código y el historial del chat van entre etiquetas marcadas como dato no confiable, se neutralizan etiquetas de cierre y la salida se valida por esquema. |
 
 ## Instalación local (Windows, PowerShell)
