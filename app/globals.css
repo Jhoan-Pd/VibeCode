@@ -222,19 +222,14 @@
   animation: vd-shimmer 1.4s ease-in-out infinite;
 }
 
-/* Palabra que cambia en el título: dos capas superpuestas que se funden con desenfoque. */
+/* Palabra que cambia en el título: capas superpuestas; la opacidad y el desenfoque los anima JS (requestAnimationFrame). */
 .vd-morph {
   display: inline-grid;
   justify-items: center;
 }
 .vd-morph > span {
   grid-area: 1 / 1;
-  transition:
-    opacity 0.8s cubic-bezier(0.65, 0, 0.35, 1),
-    filter 0.8s cubic-bezier(0.65, 0, 0.35, 1);
-}
-.vd-morph[data-morphing="true"] {
-  filter: var(--vd-morph-filter);
+  will-change: opacity, filter;
 }
 
 @media (prefers-reduced-motion: reduce) {
