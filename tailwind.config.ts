@@ -38,7 +38,8 @@ const config: Config = {
       fontFamily: {
         // Fuentes autoalojadas con @fontsource (sin CDN). Si no cargan, se usa la pila del sistema.
         sans: ["Inter Variable", "ui-sans-serif", "system-ui", "-apple-system", "Segoe UI", "Roboto", "Helvetica Neue", "Arial", "sans-serif"],
-        display: ["Source Serif 4 Variable", "Georgia", "Cambria", "Times New Roman", "serif"],
+        // Entre comillas: un nombre con un número ("4") sin comillas invalida toda la declaración CSS.
+        display: ['"Source Serif 4 Variable"', "Georgia", "Cambria", '"Times New Roman"', "serif"],
         mono: ["ui-monospace", "SFMono-Regular", "Menlo", "Consolas", "Liberation Mono", "monospace"],
       },
     },
