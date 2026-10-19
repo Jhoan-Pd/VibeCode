@@ -49,8 +49,3 @@ export function ObservadorRevelar() {
 
   return null;
 }
-
-/** Retraso escalonado para listas: el elemento `i` entra 70 ms después del anterior (máximo 6 pasos). */
-export function retraso(i: number, pasoMs = 70): React.CSSProperties {
-  return { ["--vd-delay" as string]: `${Math.min(i, 6) * pasoMs}ms` };
-}
