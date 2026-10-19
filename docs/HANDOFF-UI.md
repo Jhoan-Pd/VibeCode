@@ -63,7 +63,7 @@ El nombre de la serif va entre comillas en `tailwind.config.ts`. Sin comillas, e
 
 | Componente | Variante | Notas |
 |---|---|---|
-| `Button` | `default` | `bg-primary`, `shadow-btn`. Hover: `bg-primary-hover` y `shadow-btn-hover`. Active: `bg-primary-active` sin sombra. Transición de color, fondo, sombra y borde en 150 ms ease-out, como en la referencia. |
+| `Button` | `default` | `bg-primary`, `shadow-btn`. Hover: `bg-primary-hover` y `shadow-btn-hover`. Active: `bg-primary-active` sin sombra y escala 0,97 con rebote (clase `.vd-btn`, común a todas las variantes). |
 | `Button` | `contrast` (nueva) | Grafito con texto claro. Se usa para «Crear cuenta» y «Nuevo análisis» en la barra, como el «Sign up» de la referencia. |
 | `Button` | `outline` | Fondo de tarjeta y borde `input`. Hover: `bg-secondary`. |
 | `Card` | — | `border-border/70`, `shadow-card`, radio de 12 px |
@@ -73,7 +73,7 @@ El nombre de la serif va entre comillas en `tailwind.config.ts`. Sin comillas, e
 
 ## Movimiento
 
-Todas las curvas son de salida suave: `--ease-out-expo` = `cubic-bezier(0.16, 1, 0.3, 1)` y `--ease-out-soft` = `cubic-bezier(0.22, 0.61, 0.36, 1)`. Ninguna animación dura más de un segundo.
+Las curvas son de salida suave: `--ease-out-expo` = `cubic-bezier(0.16, 1, 0.3, 1)` y `--ease-out-soft` = `cubic-bezier(0.22, 0.61, 0.36, 1)`; la presión de los botones usa `--ease-spring`. Ninguna animación dura más de un segundo.
 
 | Elemento | Disparador | Animación | Duración | Curva |
 |---|---|---|---|---|
@@ -84,7 +84,8 @@ Todas las curvas son de salida suave: `--ease-out-expo` = `cubic-bezier(0.16, 1,
 | Panel «Compartir» | Al abrirse | Baja 6 px y aparece (`.vd-drop`) | 180 ms | out-soft |
 | Mensajes del chat y resultado del quiz | Al aparecer | Suben 6 px y aparecen (`.vd-pop`) | 240 ms | out-soft |
 | Esqueletos de carga | Mientras cargan | Brillo de izquierda a derecha | 1,4 s en bucle | ease-in-out |
-| Botones y enlaces | Hover y presión | Color, fondo y sombra | 150 ms | ease-out |
+| Botones y enlaces | Hover | Color, fondo y sombra | 150 ms | ease-out |
+| Botones | Presión (`:active`) | Se encogen al 97 % y vuelven con un rebote leve (`.vd-btn`) | 300 ms | `--ease-spring` = `cubic-bezier(0.34, 1.35, 0.64, 1)`, la misma curva de la referencia |
 
 Equivalencias con la referencia: `vd-slide-up-fade` es `anim-slide-up-and-fade(-20/-32)`, `vd-slide-down-fade` es `anim-slide-down-and-fade`, `vd-fade-in` es `anim-fade-in` y `vd-shimmer` es `anim-placeholder-animation`. La palabra que cambia es el `morphing-word` del hero de la referencia.
 
