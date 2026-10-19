@@ -5,6 +5,7 @@ import { DemoViewer } from "@/components/demo-viewer";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { LIMITE_ANALISIS_DIARIO } from "@/lib/config";
 
 const PASOS = [
   { n: "01", titulo: "Pega tu código", texto: "En el editor, desde un archivo o con la URL de un Gist. Detectamos el lenguaje automáticamente." },
@@ -31,7 +32,13 @@ const FUNCIONES = [
 
 export default async function LandingPage() {
   const session = await auth();
-  const destino = session?.user ? "/analyze" : "/register";
+  const conSesion = Boolean(session?.user);
+  const destino = conSesion ? "/analyze" : "/register";
+  // Un solo texto para el CTA principal (arriba y al final) y la misma unidad, «análisis», en toda la app.
+  const textoCta = conSesion ? "Analizar mi código" : "Crear cuenta gratis";
+  const notaCta = conSesion
+    ? "Los códigos que ya analizaste se abren al instante y no cuentan para tu límite."
+    : `Gratis · ${LIMITE_ANALISIS_DIARIO} análisis nuevos al día · Sin tarjeta`;
 
   return (
     <>
@@ -40,23 +47,27 @@ export default async function LandingPage() {
         <div className="bg-grid absolute inset-0 -z-10" aria-hidden />
         <div className="container flex flex-col items-center gap-6 py-20 text-center md:py-28">
           <Badge variant="default" className="gap-1.5">
-            <Sparkles className="size-3" /> Para código que escribió la IA y tú no
+            <Sparkles className="size-3" /> Para el código que escribió la IA y tú no
           </Badge>
           <h1 className="max-w-3xl text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl">
             Deja de copiar código <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">que no entiendes</span>
           </h1>
           <p className="max-w-2xl text-lg text-muted-foreground">
-            Pega lo que te generó la IA y VibeDecoder te lo explica línea por línea, lo dibuja como diagrama de flujo y se adapta a tu nivel.
+            VibeDecoder te explica línea por línea el código que te dio la IA, lo dibuja en diagramas y señala sus riesgos. Al final, un quiz
+            comprueba que de verdad lo entendiste.
           </p>
-          <div className="flex flex-wrap justify-center gap-3">
-            <Button asChild size="lg">
-              <Link href={destino}>
-                {session?.user ? "Analizar código" : "Empezar gratis"} <ArrowRight />
-              </Link>
-            </Button>
-            <Button asChild size="lg" variant="outline">
-              <a href="#demo">Ver demo</a>
-            </Button>
+          <div className="space-y-3">
+            <div className="flex flex-wrap justify-center gap-3">
+              <Button asChild size="lg">
+                <Link href={destino}>
+                  {textoCta} <ArrowRight />
+                </Link>
+              </Button>
+              <Button asChild size="lg" variant="outline">
+                <a href="#demo">Ver un ejemplo analizado</a>
+              </Button>
+            </div>
+            <p className="text-sm text-muted-foreground">{notaCta}</p>
           </div>
         </div>
       </section>
@@ -114,9 +125,10 @@ export default async function LandingPage() {
             <h2 className="text-2xl font-semibold tracking-tight">¿Qué código llevas copiado hoy sin entender?</h2>
             <Button asChild size="lg">
               <Link href={destino}>
-                Decodificarlo ahora <ArrowRight />
+                {textoCta} <ArrowRight />
               </Link>
             </Button>
+            <p className="text-sm text-muted-foreground">{notaCta}</p>
           </CardContent>
         </Card>
       </section>
