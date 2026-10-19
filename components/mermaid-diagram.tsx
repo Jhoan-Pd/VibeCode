@@ -17,6 +17,35 @@ const ETIQUETA: Record<TipoMermaid, string> = {
 
 type Estado = "cargando" | "ok" | "error";
 
+const FUENTE = '"Inter Variable", ui-sans-serif, system-ui, sans-serif';
+const TEMA_CLARO = {
+  fontFamily: FUENTE,
+  background: "#ffffff",
+  primaryColor: "#e8edf8",
+  primaryBorderColor: "#275fce",
+  primaryTextColor: "#16181d",
+  secondaryColor: "#f2f3f3",
+  tertiaryColor: "#fcfcfc",
+  lineColor: "#51585d",
+  textColor: "#16181d",
+  noteBkgColor: "#fdf6e3",
+  noteTextColor: "#16181d",
+};
+const TEMA_OSCURO = {
+  fontFamily: FUENTE,
+  darkMode: true,
+  background: "#1d2026",
+  primaryColor: "#1f2b45",
+  primaryBorderColor: "#6c8de0",
+  primaryTextColor: "#f6f8f8",
+  secondaryColor: "#23272c",
+  tertiaryColor: "#16181d",
+  lineColor: "#a8aeb3",
+  textColor: "#f6f8f8",
+  noteBkgColor: "#2b2a22",
+  noteTextColor: "#f6f8f8",
+};
+
 /**
  * Renderiza Mermaid en el cliente. Flujo de robustez:
  *  1) mermaid.parse() valida la sintaxis ANTES de dibujar,
@@ -49,7 +78,9 @@ export function MermaidDiagram({ codigo, analisisId, tipo = "FLUJO" }: { codigo:
         mermaid.initialize({
           startOnLoad: false,
           securityLevel: "strict",
-          theme: oscuro ? "dark" : "default",
+          // Tema "base" con la paleta de la app (tokens de globals.css) para que el diagrama no desentone.
+          theme: "base",
+          themeVariables: oscuro ? TEMA_OSCURO : TEMA_CLARO,
           suppressErrorRendering: true,
           flowchart: { htmlLabels: false, curve: "basis" },
           sequence: { useMaxWidth: true },
