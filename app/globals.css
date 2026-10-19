@@ -45,6 +45,8 @@
     /* Movimiento */
     --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
     --ease-out-soft: cubic-bezier(0.22, 0.61, 0.36, 1);
+    /* Rebote leve al presionar (cubic-bezier de los botones de la referencia). */
+    --ease-spring: cubic-bezier(0.34, 1.35, 0.64, 1);
   }
 
   .dark {
@@ -207,6 +209,19 @@
 .vd-js [data-revelar].vd-visible {
   opacity: 1;
   transform: none;
+}
+
+/* Botones: color, fondo y sombra en 150 ms; al presionar se encogen al 97 % y vuelven con un rebote leve. */
+.vd-btn {
+  transition:
+    color 0.15s ease-out,
+    background-color 0.15s ease-out,
+    box-shadow 0.15s ease-out,
+    border-color 0.15s ease-out,
+    transform 0.3s var(--ease-spring);
+}
+.vd-btn:active:not(:disabled) {
+  transform: scale(0.97);
 }
 
 /* Esqueleto de carga con brillo que recorre la barra (en vez de parpadear). */
