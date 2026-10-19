@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, Bug, GitBranch, Layers, MousePointerClick, ShieldCheck, Sparkles } from "lucide-react";
+import { ArrowRight, Bug, GitBranch, GraduationCap, Layers, MessageCircleQuestion, MousePointerClick, Share2, ShieldCheck, Sparkles, TrendingUp } from "lucide-react";
 import { auth } from "@/auth";
 import { DemoViewer } from "@/components/demo-viewer";
 import { Badge } from "@/components/ui/badge";
@@ -7,18 +7,26 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 
 const PASOS = [
-  { n: "01", titulo: "Pega tu código", texto: "En el editor, desde un archivo o con la URL de un Gist. Detectamos el lenguaje solos." },
+  { n: "01", titulo: "Pega tu código", texto: "En el editor, desde un archivo o con la URL de un Gist. Detectamos el lenguaje automáticamente." },
   { n: "02", titulo: "Elige tu nivel", texto: "Principiante, intermedio o avanzado: la explicación se adapta a lo que ya sabes." },
-  { n: "03", titulo: "Entiéndelo de verdad", texto: "Resumen, explicación por bloques, diagrama de flujo y, muy pronto, un quiz que comprueba que lo captaste." },
+  {
+    n: "03",
+    titulo: "Entiéndelo y compruébalo",
+    texto: "Lee el resumen y la explicación por bloques, revisa los diagramas y la auditoría, y responde el quiz para saber qué te falta repasar.",
+  },
 ];
 
+/** Solo funciones que ya existen en la app (cada una enlaza con una pestaña o página real). */
 const FUNCIONES = [
   { icono: MousePointerClick, titulo: "Código y explicación sincronizados", texto: "Pasa el mouse por una explicación y se resalta su código, y al revés." },
-  { icono: GitBranch, titulo: "Diagramas Mermaid", texto: "El flujo de ejecución dibujado, validado antes de mostrarlo." },
-  { icono: Layers, titulo: "Adaptado a tu nivel", texto: "La misma función explicada para quien empieza o para quien busca trade-offs." },
+  { icono: GitBranch, titulo: "Diagramas de flujo, clases y secuencia", texto: "Dibujados a partir de tu código y validados antes de mostrarse. Si alguno falla, la IA lo corrige." },
+  { icono: Layers, titulo: "Adaptado a tu nivel", texto: "La misma función explicada para quien empieza o para quien compara alternativas, con un glosario de cada concepto." },
+  { icono: Bug, titulo: "Auditoría de «vibe code»", texto: "Seguridad, malas prácticas, código muerto, manejo de errores y funciones que la IA pudo inventarse." },
+  { icono: GraduationCap, titulo: "Quiz de comprensión", texto: "Preguntas sobre ESE código. Si sacas menos del 70 %, te dice qué líneas repasar." },
+  { icono: MessageCircleQuestion, titulo: "Pregúntale a la IA", texto: "Selecciona unas líneas y pregunta lo que no entiendas. La conversación queda guardada con el análisis." },
+  { icono: TrendingUp, titulo: "Tu progreso", texto: "Qué conceptos dominas, cuáles conviene reforzar y cómo evoluciona tu puntaje en los quizzes." },
+  { icono: Share2, titulo: "Exportar y compartir", texto: "Descárgalo en Markdown, guárdalo como PDF o comparte un enlace de solo lectura que puedes desactivar." },
   { icono: ShieldCheck, titulo: "Tu código nunca se ejecuta", texto: "Solo se lee y se analiza. La clave de la IA vive en el servidor, no en tu navegador." },
-  { icono: Bug, titulo: "Auditoría de «vibe code»", texto: "Próximamente: seguridad, malas prácticas y librerías que la IA pudo inventarse." },
-  { icono: Sparkles, titulo: "Quiz de comprensión", texto: "Próximamente: preguntas sobre ESE código para verificar que realmente lo entendiste." },
 ];
 
 export default async function LandingPage() {
@@ -58,7 +66,8 @@ export default async function LandingPage() {
         <div className="space-y-1">
           <h2 className="text-2xl font-semibold tracking-tight">Pruébalo ahora, sin cuenta</h2>
           <p className="text-sm text-muted-foreground">
-            Un ejemplo ya analizado (nivel intermedio). Pasa el mouse por las explicaciones o por el código y abre la pestaña del diagrama.
+            Un código real ya analizado con nivel intermedio. Pasa el mouse por las explicaciones o por el código, y recorre las pestañas de
+            diagramas, glosario, auditoría y quiz.
           </p>
         </div>
         <DemoViewer />
