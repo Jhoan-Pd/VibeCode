@@ -27,7 +27,7 @@ export async function Navbar() {
               <Button asChild variant="ghost" size="sm" className="hidden sm:inline-flex">
                 <Link href="/progreso">Progreso</Link>
               </Button>
-              <Button asChild size="sm">
+              <Button asChild size="sm" variant="contrast">
                 <Link href="/analyze">Nuevo análisis</Link>
               </Button>
               <Button asChild variant="ghost" size="sm" className="hidden md:inline-flex">
@@ -49,7 +49,7 @@ export async function Navbar() {
               <Button asChild variant="ghost" size="sm">
                 <Link href="/login">Entrar</Link>
               </Button>
-              <Button asChild size="sm">
+              <Button asChild size="sm" variant="contrast">
                 <Link href="/register">Crear cuenta</Link>
               </Button>
             </>
