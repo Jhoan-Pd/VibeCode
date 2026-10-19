@@ -24,7 +24,7 @@ export function ObservadorRevelar() {
               observador?.unobserve(entrada.target);
             }
           },
-          { threshold: 0.01, rootMargin: "0px 0px -10% 0px" },
+          { threshold: 0, rootMargin: "0px 0px -24px 0px" },
         );
 
     const vigilar = (raiz: ParentNode) => {
