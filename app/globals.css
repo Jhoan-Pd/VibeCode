@@ -129,24 +129,123 @@
   margin-left: 4px;
 }
 
-.bg-grid {
-  background-image: linear-gradient(hsl(var(--border) / 0.5) 1px, transparent 1px),
-    linear-gradient(90deg, hsl(var(--border) / 0.5) 1px, transparent 1px);
-  background-size: 44px 44px;
-  mask-image: radial-gradient(ellipse at 50% 0%, black 30%, transparent 75%);
-  -webkit-mask-image: radial-gradient(ellipse at 50% 0%, black 30%, transparent 75%);
-}
-
 .mermaid-host svg {
   max-width: 100%;
   height: auto;
   margin-inline: auto;
 }
 
+/* ---------------------------------------------------------------------------
+ * Movimiento (inspirado en twain.ai): entradas cortas de "subir y aparecer",
+ * curvas de salida suaves y nada que dure más de ~0,8 s. Ver docs/HANDOFF-UI.md.
+ * ------------------------------------------------------------------------- */
+@keyframes vd-slide-up-fade {
+  from {
+    opacity: 0;
+    transform: translateY(var(--vd-from, 6px));
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes vd-slide-down-fade {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes vd-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes vd-shimmer {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+
+/* Entrada del hero: líneas que suben 32 px, escalonadas con --vd-delay. */
+.vd-enter {
+  --vd-from: 32px;
+  animation: vd-slide-up-fade 0.8s var(--ease-out-expo) both;
+  animation-delay: var(--vd-delay, 0ms);
+}
+/* Elementos que aparecen en la interfaz (mensajes, resultados): 6 px, rápido. */
+.vd-pop {
+  animation: vd-slide-up-fade 0.24s var(--ease-out-soft) both;
+}
+/* Paneles desplegables (compartir): bajan 6 px. */
+.vd-drop {
+  animation: vd-slide-down-fade 0.18s var(--ease-out-soft) both;
+}
+/* Cambio de pestaña. */
+.vd-fade {
+  animation: vd-fade-in 0.2s ease-out both;
+}
+
+/* Aparición al hacer scroll. Solo se oculta si hay JavaScript (clase en <html>), así nada queda invisible sin JS. */
+.vd-js [data-revelar] {
+  opacity: 0;
+  transform: translateY(14px);
+  transition:
+    opacity 0.6s var(--ease-out-soft),
+    transform 0.8s var(--ease-out-expo);
+  transition-delay: var(--vd-delay, 0ms);
+}
+.vd-js [data-revelar].vd-visible {
+  opacity: 1;
+  transform: none;
+}
+
+/* Esqueleto de carga con brillo que recorre la barra (en vez de parpadear). */
+.vd-skeleton {
+  position: relative;
+  overflow: hidden;
+}
+.vd-skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, hsl(var(--background) / 0.7), transparent);
+  animation: vd-shimmer 1.4s ease-in-out infinite;
+}
+
+/* Palabra que cambia en el título: dos capas superpuestas que se funden con desenfoque. */
+.vd-morph {
+  display: inline-grid;
+  justify-items: center;
+}
+.vd-morph > span {
+  grid-area: 1 / 1;
+  transition:
+    opacity 0.8s cubic-bezier(0.65, 0, 0.35, 1),
+    filter 0.8s cubic-bezier(0.65, 0, 0.35, 1);
+}
+.vd-morph[data-morphing="true"] {
+  filter: var(--vd-morph-filter);
+}
+
 @media (prefers-reduced-motion: reduce) {
   * {
     animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+  .vd-js [data-revelar] {
+    opacity: 1;
+    transform: none;
   }
 }
 
