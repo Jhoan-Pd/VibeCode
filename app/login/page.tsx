@@ -3,7 +3,7 @@ import { LoginForm } from "@/components/auth-forms";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { rutaInternaSegura } from "@/lib/redirect";
 
-export const metadata: Metadata = { title: "Iniciar sesión" };
+export const metadata: Metadata = { title: "Entrar" };
 
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ callbackUrl?: string }> }) {
   const { callbackUrl } = await searchParams;

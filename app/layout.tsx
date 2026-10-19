@@ -6,7 +6,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: { default: "VibeDecoder: entiende el código que generó la IA", template: "%s · VibeDecoder" },
   description:
-    "Pega código generado por IA y obtén una explicación línea por línea, diagramas de flujo y un quiz para comprobar que realmente lo entendiste.",
+    "Pega el código que te generó la IA: VibeDecoder lo explica línea por línea, lo dibuja en diagramas, señala sus riesgos y te pone un quiz para comprobar que lo entendiste.",
 };
 
 export const viewport: Viewport = { themeColor: "#0b0d14" };
