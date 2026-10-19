@@ -11,14 +11,19 @@ export const metadata: Metadata = {
     "Pega el código que te generó la IA: VibeDecoder lo explica línea por línea, lo dibuja en diagramas, señala sus riesgos y te pone un quiz para comprobar que lo entendiste.",
 };
 
-export const viewport: Viewport = { themeColor: "#0b0d14" };
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#fcfcfc" },
+    { media: "(prefers-color-scheme: dark)", color: "#16181d" },
+  ],
+};
 
-// Aplica el tema guardado antes de pintar para evitar parpadeos. Oscuro por defecto.
-const scriptTema = `try{if(localStorage.getItem('vd-theme')==='light')document.documentElement.classList.remove('dark')}catch(e){}`;
+// Aplica el tema guardado antes de pintar para evitar parpadeos. Claro por defecto; oscuro si la persona lo eligió.
+const scriptTema = `try{if(localStorage.getItem('vd-theme')==='dark')document.documentElement.classList.add('dark')}catch(e){}`;
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="es" className="dark" suppressHydrationWarning>
+    <html lang="es" suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: scriptTema }} />
       </head>

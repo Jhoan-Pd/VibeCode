@@ -13,6 +13,6 @@ export function useIsDark(): boolean {
   return useSyncExternalStore(
     subscribe,
     () => document.documentElement.classList.contains("dark"),
-    () => true, // en el servidor el modo oscuro es el predeterminado
+    () => false, // en el servidor se asume el modo claro, que es el predeterminado
   );
 }
