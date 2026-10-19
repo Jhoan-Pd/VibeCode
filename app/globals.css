@@ -2,47 +2,78 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Tokens de color (estilo shadcn/ui). El modo oscuro es el predeterminado: <html class="dark">. */
+/*
+ * Tokens de color (formato HSL de shadcn/ui). Paleta tomada como referencia de twain.ai:
+ * fondo casi blanco, texto grafito, títulos azul marino y un azul único para las acciones.
+ * Ver docs/HANDOFF-UI.md. El modo claro es el predeterminado; .dark lo activa el botón de tema.
+ */
 @layer base {
   :root {
-    --background: 0 0% 99%;
-    --foreground: 224 30% 12%;
+    --background: 0 0% 99%; /* #FCFCFC */
+    --foreground: 223 14% 10%; /* #16181D */
+    --heading: 205 74% 9%; /* #061A28: títulos en serif */
     --card: 0 0% 100%;
-    --card-foreground: 224 30% 12%;
-    --primary: 262 83% 58%;
+    --card-foreground: 223 14% 10%;
+    --primary: 220 68% 48%; /* #275FCE: botones y enlaces */
+    --primary-hover: 219 70% 37%;
+    --primary-active: 215 70% 26%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 220 16% 94%;
-    --secondary-foreground: 224 30% 20%;
-    --muted: 220 16% 94%;
-    --muted-foreground: 220 9% 40%;
-    --accent: 190 85% 36%;
+    --contrast: 200 10% 19%; /* botón oscuro secundario (grafito) */
+    --contrast-hover: 210 11% 15%;
+    --contrast-foreground: 180 7% 92%;
+    --secondary: 180 3% 95%;
+    --secondary-foreground: 223 14% 10%;
+    --muted: 180 3% 95%;
+    --muted-foreground: 205 7% 34%;
+    --accent: 215 70% 26%; /* código en línea y énfasis */
     --accent-foreground: 0 0% 100%;
-    --destructive: 0 72% 50%;
+    --destructive: 354 62% 47%;
     --destructive-foreground: 0 0% 100%;
-    --border: 220 14% 88%;
-    --input: 220 14% 86%;
-    --ring: 262 83% 58%;
-    --radius: 0.6rem;
+    --success: 119 33% 26%;
+    --border: 210 10% 90%;
+    --input: 210 9% 86%;
+    --ring: 220 68% 48%;
+    --radius: 0.75rem;
+    /* Sombras en capas: dan relieve sin bordes duros. */
+    --shadow-btn: 0 6px 16px -8px hsl(209 73% 16% / 0.08), 0 3px 8px -4px hsl(209 73% 16% / 0.06), 0 1px 3px -1px hsl(209 73% 16% / 0.04),
+      inset 0 -1px 0 1px hsl(219 69% 37% / 0.32), inset 0 1px 2px -1px hsl(0 0% 100% / 0.32);
+    --shadow-btn-hover: 0 6px 32px -12px hsl(209 73% 16% / 0.16), 0 4px 12px -4px hsl(209 73% 16% / 0.08), 0 2px 4px -2px hsl(209 73% 16% / 0.04),
+      inset 0 -1px 0 1px hsl(215 70% 26% / 0.32), inset 0 1px 2px -1px hsl(0 0% 100% / 0.32);
+    --shadow-contrast: 0 8px 16px -8px hsl(223 14% 10% / 0.12), inset 0 1px 2px -1px hsl(0 0% 100% / 0.2), inset 0 -1px 0 1px hsl(223 14% 10% / 0.4);
+    --shadow-card: 0 1px 0 0 hsl(213 70% 26% / 0.02), 0 0 0 1px hsl(213 70% 26% / 0.04), 0 1px 8px -4px hsl(213 70% 26% / 0.06),
+      0 4px 12px -6px hsl(213 70% 26% / 0.06);
+    /* Movimiento */
+    --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+    --ease-out-soft: cubic-bezier(0.22, 0.61, 0.36, 1);
   }
 
   .dark {
-    --background: 225 27% 7%;
-    --foreground: 210 20% 94%;
-    --card: 225 24% 10%;
-    --card-foreground: 210 20% 94%;
-    --primary: 262 90% 68%;
-    --primary-foreground: 225 27% 8%;
-    --secondary: 223 20% 15%;
-    --secondary-foreground: 210 20% 92%;
-    --muted: 223 20% 14%;
-    --muted-foreground: 215 14% 66%;
-    --accent: 189 90% 58%;
-    --accent-foreground: 225 27% 8%;
-    --destructive: 0 75% 62%;
+    --background: 223 14% 10%; /* #16181D */
+    --foreground: 180 8% 97%;
+    --heading: 180 8% 97%;
+    --card: 220 12% 13%;
+    --card-foreground: 180 8% 97%;
+    --primary: 220 68% 48%;
+    --primary-hover: 223 63% 59%;
+    --primary-active: 219 70% 37%;
+    --primary-foreground: 0 0% 100%;
+    --contrast: 180 7% 92%;
+    --contrast-hover: 0 0% 100%;
+    --contrast-foreground: 223 14% 10%;
+    --secondary: 210 11% 15%;
+    --secondary-foreground: 180 7% 92%;
+    --muted: 210 11% 15%;
+    --muted-foreground: 207 7% 68%;
+    --accent: 223 63% 72%;
+    --accent-foreground: 223 14% 10%;
+    --destructive: 354 70% 62%;
     --destructive-foreground: 0 0% 100%;
-    --border: 223 18% 19%;
-    --input: 223 18% 22%;
-    --ring: 262 90% 68%;
+    --success: 119 35% 60%;
+    --border: 210 8% 21%;
+    --input: 210 8% 25%;
+    --ring: 223 63% 59%;
+    --shadow-card: 0 0 0 1px hsl(0 0% 100% / 0.04), 0 4px 12px -6px hsl(0 0% 0% / 0.4);
+    --shadow-contrast: 0 8px 16px -8px hsl(0 0% 0% / 0.4), inset 0 1px 0 0 hsl(0 0% 100% / 0.6);
   }
 
   * {
