@@ -48,7 +48,7 @@ export default async function ProgresoPage() {
     <div className="container space-y-6 py-8">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Tu progreso</h1>
+          <h1 className="vd-title text-3xl sm:text-4xl">Tu progreso</h1>
           <p className="mt-1 text-sm text-muted-foreground">Qué conceptos ya dominas y cuáles conviene repasar, según tus respuestas en los quizzes.</p>
         </div>
         <Button asChild variant="outline">

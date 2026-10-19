@@ -37,7 +37,7 @@ export default async function DashboardPage() {
     <div className="container space-y-6 py-8">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Tu historial</h1>
+          <h1 className="vd-title text-3xl sm:text-4xl">Tu historial</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             {analisis.length === 0 ? "Aún no has analizado nada." : `${analisis.length} análisis guardado${analisis.length === 1 ? "" : "s"}.`}
           </p>

@@ -78,7 +78,7 @@ export default async function AnalysisPage({
         </Button>
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0 space-y-2">
-            <h1 className="break-words text-2xl font-semibold tracking-tight">{analisis.titulo}</h1>
+            <h1 className="break-words vd-title text-3xl sm:text-4xl">{analisis.titulo}</h1>
             <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
               <Badge variant="outline">{languageLabel(analisis.lenguaje)}</Badge>
               <Badge variant="outline">Nivel {NIVEL_INFO[analisis.nivel].label.toLowerCase()}</Badge>

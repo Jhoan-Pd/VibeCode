@@ -17,7 +17,7 @@ export default async function AnalyzePage() {
   return (
     <div className="container space-y-6 py-8">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Nuevo análisis</h1>
+        <h1 className="vd-title text-3xl sm:text-4xl">Nuevo análisis</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Pega código, sube un archivo o importa un Gist. Nunca ejecutamos tu código: solo lo leemos y lo explicamos.
         </p>

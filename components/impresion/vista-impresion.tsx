@@ -43,7 +43,7 @@ export function VistaImpresion({ datos, titulo, nivel, creadoEn }: { datos: Anal
   return (
     <article className="mx-auto max-w-4xl space-y-8 text-sm leading-relaxed">
       <header className="space-y-1">
-        <h1 className="text-2xl font-semibold tracking-tight">{titulo}</h1>
+        <h1 className="vd-title text-3xl">{titulo}</h1>
         <p className="text-muted-foreground">
           {languageLabel(datos.lenguaje)} · nivel {NIVEL_INFO[nivel].label.toLowerCase()} · {creadoEn.toLocaleDateString("es-CO")} · generado con VibeDecoder
         </p>

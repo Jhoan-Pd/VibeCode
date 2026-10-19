@@ -33,7 +33,7 @@ export default async function AnalisisCompartidoPage({ params }: { params: Promi
     <div className="container space-y-6 py-8">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0 space-y-2">
-          <h1 className="break-words text-2xl font-semibold tracking-tight">{analisis.titulo}</h1>
+          <h1 className="break-words vd-title text-3xl sm:text-4xl">{analisis.titulo}</h1>
           <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
             <Badge variant="secondary">
               <Eye className="size-3" /> Solo lectura

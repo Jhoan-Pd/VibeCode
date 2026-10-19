@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 export default function GlobalError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   return (
     <div className="container flex min-h-[60vh] flex-col items-center justify-center gap-4 text-center">
-      <h1 className="text-2xl font-semibold tracking-tight">Algo salió mal</h1>
+      <h1 className="vd-title text-3xl sm:text-4xl">Algo salió mal</h1>
       <p className="max-w-sm text-sm text-muted-foreground">
         Ocurrió un error inesperado. Puedes intentarlo de nuevo; si persiste, vuelve en unos minutos.
       </p>
