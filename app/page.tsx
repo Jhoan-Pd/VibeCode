@@ -23,7 +23,7 @@ const FUNCIONES = [
   { icono: GitBranch, titulo: "Diagramas de flujo, clases y secuencia", texto: "Dibujados a partir de tu código y validados antes de mostrarse. Si alguno falla, la IA lo corrige." },
   { icono: Layers, titulo: "Adaptado a tu nivel", texto: "La misma función explicada para quien empieza o para quien compara alternativas, con un glosario de cada concepto." },
   { icono: Bug, titulo: "Auditoría de «vibe code»", texto: "Seguridad, malas prácticas, código muerto, manejo de errores y funciones que la IA pudo inventarse." },
-  { icono: GraduationCap, titulo: "Quiz de comprensión", texto: "Preguntas sobre ESE código. Si sacas menos del 70 %, te dice qué líneas repasar." },
+  { icono: GraduationCap, titulo: "Quiz de comprensión", texto: "Preguntas sobre ESE código. Si sacas menos del 70 %, te dice qué líneas repasar." },
   { icono: MessageCircleQuestion, titulo: "Pregúntale a la IA", texto: "Selecciona unas líneas y pregunta lo que no entiendas. La conversación queda guardada con el análisis." },
   { icono: TrendingUp, titulo: "Tu progreso", texto: "Qué conceptos dominas, cuáles conviene reforzar y cómo evoluciona tu puntaje en los quizzes." },
   { icono: Share2, titulo: "Exportar y compartir", texto: "Descárgalo en Markdown, guárdalo como PDF o comparte un enlace de solo lectura que puedes desactivar." },
