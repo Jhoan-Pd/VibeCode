@@ -114,7 +114,7 @@ export function ChatPanel({ analisisId, mensajesIniciales, seleccion, limpiarSel
           </div>
         )}
         {mensajes.map((m) => (
-          <div key={m.id} className={cn("flex", m.rol === "USUARIO" ? "justify-end" : "justify-start")}>
+          <div key={m.id} className={cn("vd-pop flex", m.rol === "USUARIO" ? "justify-end" : "justify-start")}>
             <div
               className={cn(
                 "max-w-[90%] space-y-2 rounded-lg px-3 py-2 text-sm leading-relaxed",

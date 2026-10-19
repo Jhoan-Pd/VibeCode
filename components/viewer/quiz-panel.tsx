@@ -169,7 +169,7 @@ function ResumenResultado({
 }) {
   const aprobado = resultado.porcentaje >= UMBRAL_APROBACION;
   return (
-    <Card className={aprobado ? "border-emerald-500/40" : "border-amber-500/40"}>
+    <Card className={cn("vd-pop", aprobado ? "border-emerald-500/40" : "border-amber-500/40")}>
       <CardHeader className="pb-3">
         <CardTitle className="flex flex-wrap items-center gap-3">
           <GraduationCap className="size-5 text-primary" />
