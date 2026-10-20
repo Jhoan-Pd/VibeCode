@@ -31,6 +31,11 @@ export function ChatPanel({ analisisId, mensajesIniciales, seleccion, limpiarSel
   const [texto, setTexto] = useState("");
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  /** El ícono de enviar (un avión de papel) sale volando mientras se envía la pregunta. */
+  const [vuelos, setVuelos] = useState(0);
+  const [volando, setVolando] = useState(false);
+  /** Mensajes que ya estaban al abrir el chat: solo las respuestas nuevas se animan por partes. */
+  const iniciales = useRef(new Set(mensajesIniciales.map((m) => m.id)));
   const finRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -56,6 +61,9 @@ export function ChatPanel({ analisisId, mensajesIniciales, seleccion, limpiarSel
     const mensaje = pregunta.trim();
     if (mensaje.length < 2 || enviando) return;
     setEnviando(true);
+    setVuelos((n) => n + 1);
+    setVolando(true);
+    setTimeout(() => setVolando(false), 700);
     setError(null);
     try {
       const res = await fetch(`/api/analysis/${analisisId}/chat`, {
@@ -122,7 +130,11 @@ export function ChatPanel({ analisisId, mensajesIniciales, seleccion, limpiarSel
               )}
             >
               {m.rol === "USUARIO" && m.lineaInicio != null && <BotonLineas inicio={m.lineaInicio} fin={m.lineaFin} irALineas={irALineas} />}
-              {m.rol === "USUARIO" ? <p className="whitespace-pre-wrap">{m.contenido}</p> : <TextoChat texto={m.contenido} />}
+              {m.rol === "USUARIO" ? (
+                <p className="whitespace-pre-wrap">{m.contenido}</p>
+              ) : (
+                <TextoChat texto={m.contenido} animar={!iniciales.current.has(m.id)} />
+              )}
             </div>
           </div>
         ))}
@@ -180,7 +192,7 @@ export function ChatPanel({ analisisId, mensajesIniciales, seleccion, limpiarSel
             className="flex-1 resize-none rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           />
           <Button type="submit" size="icon" disabled={enviando || texto.trim().length < 2} aria-label="Enviar pregunta">
-            {enviando ? <Spinner /> : <Send />}
+            {enviando && !volando ? <Spinner /> : <Send key={vuelos} className={vuelos > 0 ? "vd-send-fly" : undefined} />}
           </Button>
         </div>
       </form>
