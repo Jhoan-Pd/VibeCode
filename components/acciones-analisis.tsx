@@ -85,7 +85,7 @@ export function AccionesAnalisis({ analisisId, tokenInicial }: { analisisId: str
                   className="min-w-0 flex-1 rounded-md border border-input bg-background px-2 py-1.5 font-mono text-xs"
                 />
                 <Button size="sm" onClick={copiar} aria-label="Copiar enlace">
-                  {copiado ? <Check /> : <Copy />} {copiado ? "Copiado" : "Copiar"}
+                  {copiado ? <Check className="vd-pulse" /> : <Copy />} {copiado ? "Copiado" : "Copiar"}
                 </Button>
               </div>
               <Button variant="ghost" size="sm" onClick={() => cambiar("DELETE")} disabled={cargando} className="text-destructive hover:text-destructive">

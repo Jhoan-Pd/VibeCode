@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Copy, Wand2 } from "lucide-react";
+import { Check, Copy, Wand2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Alert, Skeleton, Spinner } from "@/components/ui/misc";
 import { useIsDark } from "@/hooks/use-is-dark";
@@ -176,7 +176,7 @@ export function MermaidDiagram({ codigo, analisisId, tipo = "FLUJO" }: { codigo:
         <summary className="cursor-pointer select-none px-3 py-2 text-muted-foreground">Ver código Mermaid</summary>
         <div className="relative border-t">
           <Button variant="ghost" size="sm" className="absolute right-2 top-2" onClick={copiar}>
-            <Copy /> {copiado ? "Copiado" : "Copiar"}
+            {copiado ? <Check className="vd-pulse" /> : <Copy />} {copiado ? "Copiado" : "Copiar"}
           </Button>
           <pre className="overflow-auto p-3 pr-24 font-mono text-xs leading-relaxed">{fuente}</pre>
           {estado === "error" && errorParser && (
