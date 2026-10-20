@@ -53,7 +53,11 @@ export function LoginForm({ callbackUrl, githubHabilitado }: { callbackUrl: stri
     <div className="space-y-4">
       <BotonGithub callbackUrl={callbackUrl} habilitado={githubHabilitado} />
       <form onSubmit={enviar} className="space-y-4" noValidate>
-        {error && <Alert variant="error">{error}</Alert>}
+        {error && (
+          <Alert key={error} variant="error" className="vd-shake">
+            {error}
+          </Alert>
+        )}
         <div className="space-y-2">
           <Label htmlFor="email">Correo</Label>
           <Input id="email" type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
@@ -118,7 +122,11 @@ export function RegisterForm({ githubHabilitado }: { githubHabilitado: boolean }
     <div className="space-y-4">
       <BotonGithub callbackUrl="/dashboard" habilitado={githubHabilitado} />
       <form onSubmit={enviar} className="space-y-4" noValidate>
-        {error && <Alert variant="error">{error}</Alert>}
+        {error && (
+          <Alert key={error} variant="error" className="vd-shake">
+            {error}
+          </Alert>
+        )}
         <div className="space-y-2">
           <Label htmlFor="nombre">Nombre</Label>
           <Input id="nombre" autoComplete="name" required value={nombre} onChange={(e) => setNombre(e.target.value)} />
