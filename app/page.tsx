@@ -45,7 +45,7 @@ export default async function LandingPage() {
   return (
     <>
       {/* Hero: entra por líneas (sube 32 px y aparece), escalonado cada 75 ms. */}
-      <section>
+      <section className="overflow-x-clip">
         <div className="container flex flex-col items-center gap-7 py-20 text-center md:py-28">
           <Badge variant="default" className="vd-enter gap-1.5" style={retraso(0, 75)}>
             <Sparkles className="size-3" /> Para el código que escribió la IA y tú no
