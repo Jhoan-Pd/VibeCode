@@ -6,6 +6,7 @@ import { TextoConCodigo } from "@/components/texto-con-codigo";
 import { Card, CardContent } from "@/components/ui/card";
 import type { ConceptoVista } from "@/schemas/vista";
 import { BotonLineas, type IrALineas } from "./boton-lineas";
+import { retraso } from "@/lib/movimiento";
 
 /** Glosario de conceptos usados en el código, cada uno con enlace a la línea donde aparece. */
 export function GlosarioPanel({ conceptos, irALineas, analisisId }: { conceptos: ConceptoVista[]; irALineas: IrALineas; analisisId?: string }) {
@@ -25,8 +26,8 @@ export function GlosarioPanel({ conceptos, irALineas, analisisId }: { conceptos:
   }
   return (
     <ul className="grid gap-3 md:grid-cols-2" aria-label="Glosario de conceptos">
-      {conceptos.map((c) => (
-        <li key={c.nombre}>
+      {conceptos.map((c, i) => (
+        <li key={c.nombre} className="vd-card-enter" style={retraso(i, 50)}>
           <Card className="h-full">
             <CardContent className="space-y-2 p-4">
               <div className="flex items-start justify-between gap-3">
