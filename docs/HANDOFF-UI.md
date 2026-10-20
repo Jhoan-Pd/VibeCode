@@ -78,18 +78,25 @@ Las curvas son de salida suave: `--ease-out-expo` = `cubic-bezier(0.16, 1, 0.3, 
 | Elemento | Disparador | Animación | Duración | Curva |
 |---|---|---|---|---|
 | Hero: insignia, las dos líneas del título, subtítulo y CTA | Carga de la página | Sube 32 px y aparece (`.vd-enter`), escalonado cada 75 ms | 800 ms | out-expo |
-| Palabra «copiar / pegar» del título | Cada 3 s | Fundido cruzado con desenfoque de 0 a 12 px; opacidad = f^0.4 para que nunca desaparezca | 1000 ms | JS (`requestAnimationFrame`) |
+| Avión de papel y palabra «copiar / pegar» del título | Cada 3,2 s | Un avión de papel entra por arriba a la izquierda, baja y cruza la palabra siguiendo una curva de Bézier (`lib/vuelo.ts`); apunta según la tangente y se inclina (alabeo) al girar. A su paso, una máscara borra la palabra vieja y descubre la nueva, que se aclara desde 4 px de desenfoque | 1800 ms | seno (frena al cruzar la palabra) |
 | Títulos, tarjetas de «Cómo funciona», funciones, demo y CTA final | Al entrar en pantalla | Sube 14 px y aparece (`[data-revelar]`), escalonado cada 70 ms dentro de cada grupo | 600 ms opacidad / 800 ms posición | out-soft / out-expo |
 | Paneles del visor (código, diagramas, glosario, auditoría, quiz) | Cambio de pestaña | Fundido (`.vd-fade`) | 200 ms | ease-out |
 | Panel «Compartir» | Al abrirse | Baja 6 px y aparece (`.vd-drop`) | 180 ms | out-soft |
 | Mensajes del chat y resultado del quiz | Al aparecer | Suben 6 px y aparecen (`.vd-pop`) | 240 ms | out-soft |
 | Esqueletos de carga | Mientras cargan | Brillo de izquierda a derecha | 1,4 s en bucle | ease-in-out |
+| Hallazgos de la auditoría y conceptos del glosario | Al abrir la pestaña | Suben 24 px y aparecen (`.vd-card-enter`), escalonados cada 60 / 50 ms | 500 ms | out-expo |
+| Etapas del análisis en curso | Al completarse cada etapa | La marca verde «cae» desde 1,8× (`.vd-check-in`); si la etapa falla, el ícono se sacude | 150 ms | ease-in-out |
+| Botón de enviar del chat (ícono de avión de papel) | Al enviar | El avión sale volando hacia arriba a la derecha y entra uno nuevo desde abajo (`.vd-send-fly`); luego aparece el spinner | 700 ms | out-expo |
+| Respuesta nueva del chat | Al llegar | Sus párrafos, listas y bloques de código aparecen uno tras otro (`.vd-partes`), cada 90 ms | 350 ms | out-soft |
+| Ícono «Copiado» (enlace público y código Mermaid) | Al copiar | Latido 1 → 1,25 → 1 (`.vd-pulse`) | 300 ms | ease-out |
+| Avisos de error del login, el registro y el formulario de análisis | Al aparecer | Sacudida vertical de ±6 px (`.vd-shake`) | 300 ms | ease-out |
+| Desplegables (`<details>`: código Mermaid, tabla del progreso) | Al abrirse | El contenido baja 6 px y aparece | 150 ms | ease-out |
 | Botones y enlaces | Hover | Color, fondo y sombra | 150 ms | ease-out |
 | Botones | Presión (`:active`) | Se encogen al 97 % y vuelven con un rebote leve (`.vd-btn`) | 300 ms | `--ease-spring` = `cubic-bezier(0.34, 1.35, 0.64, 1)`, la misma curva de la referencia |
 
-Equivalencias con la referencia: `vd-slide-up-fade` es `anim-slide-up-and-fade(-20/-32)`, `vd-slide-down-fade` es `anim-slide-down-and-fade`, `vd-fade-in` es `anim-fade-in` y `vd-shimmer` es `anim-placeholder-animation`. La palabra que cambia es el `morphing-word` del hero de la referencia.
+Equivalencias con la referencia: `vd-slide-up-fade` es `anim-slide-up-and-fade(-20/-32)`, `vd-slide-down-fade` es `anim-slide-down-and-fade`, `vd-fade-in` es `anim-fade-in` y `vd-shimmer` es `anim-placeholder-animation`. La palabra que cambia con el avión reproduce el `morphing-word` + `paper-plane` del hero de la referencia. Las demás: `vd-card-enter` = `anim-warnings-card-enter`, `vd-check-in` = `anim-checkbox-check-in`, `vd-pulse` = `anim-icon-pulse`, `vd-shake` = `anim-vertical-shake` (a ±6 px en vez de ±8), `vd-partes` = `animated-text__part.__fade-in` y el desplegable = `anim-collapsible-open`.
 
-La referencia además aplica un filtro SVG de umbral (`feColorMatrix`) para que las letras parezcan fundirse. Se probó, pero con una serif de trazo fino rompía las letras y a mitad del cambio dejaba la palabra en blanco, así que se usa solo el fundido con desenfoque.
+En la referencia el avión es un modelo 3D (Three.js) y las letras se funden con un filtro SVG de umbral (`feColorMatrix`). Aquí el avión es un SVG propio de tres pliegues en los tonos del azul primario, y el cambio de palabra usa máscaras CSS con borde suave: el filtro de umbral se probó, pero con una serif de trazo fino rompía las letras.
 
 ## Estados y casos límite
 
@@ -97,7 +104,9 @@ La referencia además aplica un filtro SVG de umbral (`feColorMatrix`) para que 
 - **«Reducir movimiento» activado:** las animaciones duran 0,01 ms, las secciones aparecen visibles y la palabra no cambia.
 - **Contenido cargado después** (en el cliente): `ObservadorRevelar` vigila con `MutationObserver` los `[data-revelar]` nuevos, para que ninguno quede oculto.
 - **Bloques altos** (la demo): basta con que asome un píxel para que aparezcan, así no queda un hueco bajo el hero.
-- **Palabras de distinto largo:** la palabra ocupa el ancho de la más larga («copiar»), así el título no salta al cambiar.
+- **Palabras de distinto largo:** todas las capas ocupan el ancho de la más larga («copiar»), así las máscaras coinciden y el título no salta al cambiar.
+- **Vuelo fuera de la palabra:** el avión sale de los límites de la palabra; el hero recorta en horizontal (`overflow-x: clip`) para que nunca aparezca scroll lateral (probado a 390 px).
+- **Respuestas antiguas del chat:** solo se animan las que llegan en la sesión; las que ya estaban al abrir el chat aparecen sin animación.
 - **Impresión y PDF:** la vista para imprimir fuerza el modo claro y oculta la navegación (sin cambios).
 
 ## Comportamiento responsive
@@ -110,11 +119,12 @@ La referencia además aplica un filtro SVG de umbral (`feColorMatrix`) para que 
 
 ## Accesibilidad
 
-- La palabra que cambia tiene un texto fijo para lectores de pantalla («copiar») y las capas animadas van con `aria-hidden`.
+- La palabra que cambia tiene un texto fijo para lectores de pantalla («copiar»); las capas animadas y el avión van con `aria-hidden`.
+- Con «reducir movimiento» el avión no se muestra y la palabra no cambia; el resto de animaciones dura 0,01 ms.
 - Contraste en modo claro: el texto #16181D sobre #FCFCFC supera 15:1; el azul primario #275FCE con texto blanco es aproximadamente 5:1 (AA para texto normal).
 - El foco visible usa `--ring`, que es el azul primario.
 - No hay animaciones en bucle salvo la palabra del título, que se detiene con «reducir movimiento», y los esqueletos de carga.
 
 ## Archivos
 
-`app/globals.css` (tokens, keyframes y utilidades), `tailwind.config.ts`, `app/layout.tsx` (fuentes, tema por defecto y observador), `components/ui/button.tsx`, `components/ui/card.tsx`, `components/ui/misc.tsx`, `components/motion/*`, `lib/movimiento.ts`, `app/page.tsx` y `components/mermaid-diagram.tsx` (tema de los diagramas).
+`app/globals.css` (tokens, keyframes y utilidades), `lib/vuelo.ts` (trayectoria del avión), `components/motion/avion-papel.tsx`, `tailwind.config.ts`, `app/layout.tsx` (fuentes, tema por defecto y observador), `components/ui/button.tsx`, `components/ui/card.tsx`, `components/ui/misc.tsx`, `components/motion/*`, `lib/movimiento.ts`, `app/page.tsx` y `components/mermaid-diagram.tsx` (tema de los diagramas).
