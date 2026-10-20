@@ -237,14 +237,29 @@
   animation: vd-shimmer 1.4s ease-in-out infinite;
 }
 
-/* Palabra que cambia en el título: capas superpuestas; la opacidad y el desenfoque los anima JS (requestAnimationFrame). */
+/* Palabra que cambia en el título: capas superpuestas del ancho de la más larga (así las máscaras
+   coinciden). La opacidad, las máscaras y el desenfoque los anima JS (requestAnimationFrame). */
 .vd-morph {
   display: inline-grid;
-  justify-items: center;
+  justify-items: stretch;
+  text-align: center;
 }
 .vd-morph > span {
   grid-area: 1 / 1;
-  will-change: opacity, filter;
+  will-change: opacity, filter, mask-image;
+}
+
+/* Avión de papel que cruza la palabra: posicionado desde la esquina de la palabra y movido con transform. */
+.vd-avion {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 0.78em;
+  height: 0.52em;
+  opacity: 0;
+  pointer-events: none;
+  will-change: transform, opacity;
+  filter: drop-shadow(0 0.06em 0.05em hsl(var(--primary-active) / 0.25));
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -256,6 +271,9 @@
   .vd-js [data-revelar] {
     opacity: 1;
     transform: none;
+  }
+  .vd-avion {
+    display: none;
   }
 }
 
