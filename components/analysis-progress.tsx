@@ -14,9 +14,9 @@ export function AnalysisProgress({ etapas, mensajes }: { etapas: Record<Etapa, E
         return (
           <li key={e.id} className="flex items-start gap-3">
             <span className="mt-0.5 flex size-5 items-center justify-center">
-              {estado === "done" && <CheckCircle2 className="size-5 text-emerald-500" />}
+              {estado === "done" && <CheckCircle2 className="vd-check-in size-5 text-success" />}
               {estado === "running" && <Spinner className="size-4 text-primary" />}
-              {estado === "error" && <AlertTriangle className="size-5 text-destructive" />}
+              {estado === "error" && <AlertTriangle className="vd-shake size-5 text-destructive" />}
               {estado === "pendiente" && <Circle className="size-5 text-muted-foreground/50" />}
             </span>
             <div>
