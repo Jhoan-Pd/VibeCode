@@ -286,6 +286,23 @@
   animation: vd-send-fly 0.7s var(--ease-out-expo);
 }
 
+/* Respuesta nueva del chat: sus partes (párrafos, listas, código) aparecen una tras otra, como «animated-text». */
+.vd-partes > * {
+  animation: vd-slide-up-fade 0.35s var(--ease-out-soft) both;
+}
+.vd-partes > :nth-child(2) {
+  animation-delay: 90ms;
+}
+.vd-partes > :nth-child(3) {
+  animation-delay: 180ms;
+}
+.vd-partes > :nth-child(4) {
+  animation-delay: 270ms;
+}
+.vd-partes > :nth-child(n + 5) {
+  animation-delay: 360ms;
+}
+
 /* Desplegables (<details>): el contenido baja 6 px al abrirse, como «collapsible-open». */
 details[open] > :not(summary) {
   animation: vd-slide-down-fade 0.15s ease-out;
