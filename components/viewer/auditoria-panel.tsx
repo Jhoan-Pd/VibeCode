@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Alert } from "@/components/ui/misc";
 import { HALLAZGO_INFO, SEVERIDAD_INFO, type HallazgoVista, type Severidad, type TipoHallazgo } from "@/schemas/vista";
 import { BotonLineas, type IrALineas } from "./boton-lineas";
+import { retraso } from "@/lib/movimiento";
 
 const ICONO: Record<TipoHallazgo, React.ComponentType<{ className?: string }>> = {
   SEGURIDAD: ShieldAlert,
@@ -75,7 +76,7 @@ export function AuditoriaPanel({
         {hallazgos.map((h, i) => {
           const Icono = ICONO[h.tipo];
           return (
-            <li key={`${h.titulo}-${i}`}>
+            <li key={`${h.titulo}-${i}`} className="vd-card-enter" style={retraso(i, 60)}>
               <Card className={h.severidad === "CRITICA" ? "border-destructive/50" : undefined}>
                 <CardContent className="space-y-3 p-4">
                   <div className="flex flex-wrap items-start justify-between gap-2">
