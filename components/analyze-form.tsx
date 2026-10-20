@@ -174,7 +174,11 @@ export function AnalyzeForm({ nivelInicial, cupo }: { nivelInicial: NivelUsuario
           </span>
         </div>
 
-        {errorFuente && <Alert variant="error" className="m-3">{errorFuente}</Alert>}
+        {errorFuente && (
+          <Alert key={errorFuente} variant="error" className="vd-shake m-3">
+            {errorFuente}
+          </Alert>
+        )}
 
         {fuente === "pegar" && (
           <div className="relative h-[52vh] min-h-[340px]">
@@ -307,7 +311,7 @@ export function AnalyzeForm({ nivelInicial, cupo }: { nivelInicial: NivelUsuario
               </div>
 
               {fase === "error" && errorAnalisis && (
-                <Alert variant="error" title="No se pudo completar el análisis">
+                <Alert key={errorAnalisis} variant="error" title="No se pudo completar el análisis" className="vd-shake">
                   {errorAnalisis}
                   {analisisFallidoId && (
                     <button type="button" className="mt-2 block text-xs text-primary underline" onClick={() => router.push(`/analysis/${analisisFallidoId}`)}>
