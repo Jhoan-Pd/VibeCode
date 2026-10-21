@@ -8,6 +8,7 @@ import { Github } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
 import { Alert, Spinner } from "@/components/ui/misc";
+import { problemaCorreo } from "@/lib/correo";
 
 function BotonGithub({ callbackUrl, habilitado }: { callbackUrl: string; habilitado: boolean }) {
   if (!habilitado) return null;
@@ -87,10 +88,19 @@ export function RegisterForm({ githubHabilitado }: { githubHabilitado: boolean }
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [cargando, setCargando] = useState(false);
+  const [emailTocado, setEmailTocado] = useState(false);
+  // El problema del correo se avisa al salir del campo, o de inmediato si tiene tildes o «ñ».
+  const problema = problemaCorreo(email);
+  const mostrarProblema = Boolean(problema) && (emailTocado || /[^\x00-\x7f]/.test(email));
 
   async function enviar(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    if (problema) {
+      setEmailTocado(true);
+      document.getElementById("email")?.focus();
+      return;
+    }
     setCargando(true);
     try {
       const res = await fetch("/api/register", {
@@ -106,7 +116,8 @@ export function RegisterForm({ githubHabilitado }: { githubHabilitado: boolean }
       // Inicia sesión automáticamente con las credenciales recién creadas.
       const login = await signIn("credentials", { email, password, redirect: false });
       if (!login || login.error) {
-        router.push("/login");
+        // La cuenta sí se creó: se avisa en /login en vez de dejar a la persona sin explicación.
+        router.push("/login?creada=1");
         return;
       }
       router.push("/dashboard");
@@ -133,7 +144,23 @@ export function RegisterForm({ githubHabilitado }: { githubHabilitado: boolean }
         </div>
         <div className="space-y-2">
           <Label htmlFor="email">Correo</Label>
-          <Input id="email" type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
+          <Input
+            id="email"
+            type="email"
+            autoComplete="email"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            onBlur={() => setEmailTocado(true)}
+            aria-invalid={mostrarProblema}
+            aria-describedby={mostrarProblema ? "email-problema" : undefined}
+            className={mostrarProblema ? "border-destructive focus-visible:ring-destructive" : undefined}
+          />
+          {mostrarProblema && (
+            <p id="email-problema" className="vd-pop text-xs text-destructive" role="status">
+              {problema}
+            </p>
+          )}
         </div>
         <div className="space-y-2">
           <Label htmlFor="password">Contraseña</Label>
