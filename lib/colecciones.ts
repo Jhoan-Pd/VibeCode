@@ -35,3 +35,9 @@ export function contarPor<T>(items: readonly T[], clave: (item: T) => string): M
   }
   return conteo;
 }
+
+/** Copia superficial de `obj` sin las claves indicadas (con tipo `Omit` exacto). */
+export function omitir<T extends object, K extends keyof T>(obj: T, claves: readonly K[]): Omit<T, K> {
+  const excluidas = new Set<PropertyKey>(claves);
+  return Object.fromEntries(Object.entries(obj).filter(([k]) => !excluidas.has(k))) as Omit<T, K>;
+}

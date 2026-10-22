@@ -1,8 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { agruparPor, contarPor, unicosPor } from "@/lib/colecciones";
+import { agruparPor, contarPor, omitir, unicosPor } from "@/lib/colecciones";
 import { mapConConcurrencia } from "@/lib/concurrencia";
 
 describe("colecciones", () => {
+  it("omitir quita solo las claves pedidas y no muta el original", () => {
+    const fila = { id: "x", analisisId: "a", titulo: "t", orden: 0 };
+    expect(omitir(fila, ["id", "analisisId"])).toEqual({ titulo: "t", orden: 0 });
+    expect(fila.id).toBe("x");
+  });
+
   it("unicosPor conserva el primero de cada clave y el orden", () => {
     const r = unicosPor(["Async", "map", "async", "Map", "fetch"], (x) => x.toLowerCase());
     expect(r).toEqual(["Async", "map", "fetch"]);
