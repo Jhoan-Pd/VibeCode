@@ -9,7 +9,7 @@ import { Input, Label, Select } from "@/components/ui/input";
 import { Alert } from "@/components/ui/misc";
 import { MAX_CODE_CHARS } from "@/lib/config";
 import type { EstadoCupo } from "@/lib/limites";
-import { LANGUAGES, languageLabel, type LanguageId, type LanguageOrPlain } from "@/lib/language";
+import { LANGUAGES, languageLabel, lenguajeElegido, type LanguageId, type LanguageOrPlain } from "@/lib/language";
 import { cn } from "@/lib/utils";
 import type { NivelUsuario } from "@/schemas/common";
 
@@ -53,7 +53,7 @@ export function AjustesAnalisis(p: AjustesProps) {
 
         <div className="space-y-2">
           <Label htmlFor="lenguaje">Lenguaje</Label>
-          <Select id="lenguaje" value={p.lenguaje} onChange={(e) => p.onLenguaje(e.target.value as LanguageId | "auto")}>
+          <Select id="lenguaje" value={p.lenguaje} onChange={(e) => p.onLenguaje(lenguajeElegido(e.target.value))}>
             <option value="auto">Detección automática{etiquetaAuto}</option>
             {LANGUAGES.map((l) => (
               <option key={l.id} value={l.id}>
