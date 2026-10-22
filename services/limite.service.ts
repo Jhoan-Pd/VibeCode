@@ -54,3 +54,21 @@ export async function usoDeHoy(usuarioId: string): Promise<Record<Recurso, Estad
     consultas: estadoCupo(fila?.consultasIA ?? 0, LIMITES.consultas),
   };
 }
+
+export type ResultadoConCupo<T> = { agotado: true; limite: number } | { agotado: false; valor: T; restantes: number };
+
+/**
+ * Ejecuta `accion` gastando una unidad del cupo diario (patrón «reservar y compensar»):
+ * si el cupo está agotado no ejecuta nada, y si la acción lanza un error la unidad se devuelve
+ * antes de propagarlo. Así ninguna ruta tiene que acordarse de llamar a `devolver`.
+ */
+export async function conCupo<T>(usuarioId: string, recurso: Recurso, accion: () => Promise<T>): Promise<ResultadoConCupo<T>> {
+  const cupo = await consumir(usuarioId, recurso);
+  if (!cupo.ok) return { agotado: true, limite: cupo.limite };
+  try {
+    return { agotado: false, valor: await accion(), restantes: cupo.restantes };
+  } catch (e) {
+    await devolver(usuarioId, recurso).catch(() => {});
+    throw e;
+  }
+}
