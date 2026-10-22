@@ -41,3 +41,17 @@ export function omitir<T extends object, K extends keyof T>(obj: T, claves: read
   const excluidas = new Set<PropertyKey>(claves);
   return Object.fromEntries(Object.entries(obj).filter(([k]) => !excluidas.has(k))) as Omit<T, K>;
 }
+
+/** Elemento con el mayor valor (el primero si hay empate) en O(n), sin ordenar todo el arreglo. */
+export function maxPor<T>(items: readonly T[], valor: (item: T) => number): T | undefined {
+  let mejor: T | undefined;
+  let mejorValor = Number.NEGATIVE_INFINITY;
+  for (const item of items) {
+    const v = valor(item);
+    if (v > mejorValor) {
+      mejor = item;
+      mejorValor = v;
+    }
+  }
+  return mejor;
+}

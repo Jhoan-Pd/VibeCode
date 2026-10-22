@@ -1,8 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { agruparPor, contarPor, omitir, unicosPor } from "@/lib/colecciones";
+import { agruparPor, contarPor, maxPor, omitir, unicosPor } from "@/lib/colecciones";
 import { mapConConcurrencia } from "@/lib/concurrencia";
 
 describe("colecciones", () => {
+  it("maxPor devuelve el primero de los máximos y undefined si está vacío", () => {
+    expect(maxPor([["a", 2], ["b", 5], ["c", 5]] as const, ([, n]) => n)).toEqual(["b", 5]);
+    expect(maxPor([], (x: number) => x)).toBeUndefined();
+  });
+
   it("omitir quita solo las claves pedidas y no muta el original", () => {
     const fila = { id: "x", analisisId: "a", titulo: "t", orden: 0 };
     expect(omitir(fila, ["id", "analisisId"])).toEqual({ titulo: "t", orden: 0 });
