@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Alert, Skeleton, Spinner } from "@/components/ui/misc";
 import { useIsDark } from "@/hooks/use-is-dark";
 import type { TipoMermaid } from "@/lib/mermaid";
-import { SIN_CONEXION } from "@/lib/mensajes";
+import { pedirJson } from "@/lib/client/api";
 
 const ETIQUETA: Record<TipoMermaid, string> = {
   FLUJO: "Diagrama de flujo del código",
@@ -107,24 +107,17 @@ export function MermaidDiagram({ codigo, analisisId, tipo = "FLUJO" }: { codigo:
     if (!analisisId) return;
     setReparando(true);
     setErrorReparar(null);
-    try {
-      const res = await fetch(`/api/analysis/${analisisId}/diagrama`, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ error: errorParser.slice(0, 1500), tipo }),
-      });
-      const data = (await res.json().catch(() => ({}))) as { mermaid?: string; error?: string };
-      if (!res.ok || !data.mermaid) {
-        setErrorReparar(data.error ?? "No se pudo corregir el diagrama.");
-      } else {
-        setFuente(data.mermaid);
-        router.refresh();
-      }
-    } catch {
-      setErrorReparar(SIN_CONEXION);
-    } finally {
-      setReparando(false);
+    const r = await pedirJson<{ mermaid: string }>(`/api/analysis/${analisisId}/diagrama`, {
+      cuerpo: { error: errorParser.slice(0, 1500), tipo },
+      errorPorDefecto: "No se pudo corregir el diagrama.",
+    });
+    setReparando(false);
+    if (!r.ok) {
+      setErrorReparar(r.error);
+      return;
     }
+    setFuente(r.datos.mermaid);
+    router.refresh();
   }
 
   async function copiar() {

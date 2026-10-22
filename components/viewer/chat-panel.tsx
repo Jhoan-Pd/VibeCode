@@ -10,7 +10,7 @@ import { Alert, Spinner } from "@/components/ui/misc";
 import { cn } from "@/lib/utils";
 import { MAX_MENSAJE_CHAT, type MensajeChatVista } from "@/schemas/chat";
 import { BotonLineas, etiquetaLineas, type IrALineas } from "./boton-lineas";
-import { SIN_CONEXION } from "@/lib/mensajes";
+import { pedirJson } from "@/lib/client/api";
 
 export type Seleccion = { inicio: number; fin: number } | null;
 
@@ -65,29 +65,23 @@ export function ChatPanel({ analisisId, mensajesIniciales, seleccion, limpiarSel
     setVolando(true);
     setTimeout(() => setVolando(false), 700);
     setError(null);
-    try {
-      const res = await fetch(`/api/analysis/${analisisId}/chat`, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ mensaje, lineaInicio: seleccion?.inicio ?? null, lineaFin: seleccion?.fin ?? null }),
-      });
-      const data = (await res.json().catch(() => ({}))) as { mensajes?: MensajeChatVista[]; error?: string };
-      if (!res.ok || !data.mensajes) {
-        setError(data.error ?? "No se pudo obtener respuesta.");
-        return;
-      }
-      setMensajes((prev) => [...prev, ...data.mensajes!]);
-      setTexto("");
-    } catch {
-      setError(SIN_CONEXION);
-    } finally {
-      setEnviando(false);
+    const r = await pedirJson<{ mensajes: MensajeChatVista[] }>(`/api/analysis/${analisisId}/chat`, {
+      cuerpo: { mensaje, lineaInicio: seleccion?.inicio ?? null, lineaFin: seleccion?.fin ?? null },
+      errorPorDefecto: "No se pudo obtener respuesta.",
+    });
+    setEnviando(false);
+    if (!r.ok) {
+      setError(r.error);
+      return;
     }
+    setMensajes((prev) => [...prev, ...r.datos.mensajes]);
+    setTexto("");
   }
 
   async function borrar() {
-    const res = await fetch(`/api/analysis/${analisisId}/chat`, { method: "DELETE" });
-    if (res.ok) setMensajes([]);
+    const r = await pedirJson(`/api/analysis/${analisisId}/chat`, { metodo: "DELETE", errorPorDefecto: "No se pudo borrar la conversación." });
+    if (r.ok) setMensajes([]);
+    else setError(r.error);
   }
 
   return (
