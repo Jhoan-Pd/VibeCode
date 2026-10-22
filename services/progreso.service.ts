@@ -28,6 +28,8 @@ export interface Progreso {
 /** Ventana de datos: suficiente para un curso y acotada para que la página sea rápida. */
 const MAX_INTENTOS = 200;
 const MAX_RESPUESTAS = 2000;
+/** Puntos de la gráfica de evolución (los intentos más recientes). */
+const PUNTOS_EVOLUCION = 30;
 
 export async function obtenerProgreso(usuarioId: string): Promise<Progreso> {
   const [analisis, intentos, respuestas, mensajesChat] = await Promise.all([
@@ -90,9 +92,10 @@ export async function obtenerProgreso(usuarioId: string): Promise<Progreso> {
     racha: rachaDias(dias, fechaClave(new Date(), ZONA_HORARIA)),
     conceptos,
     lenguajes: conteoPorLenguaje(analisis.map((a) => a.lenguaje)),
-    evolucion: [...resumenIntentos]
+    // Los intentos llegan del más reciente al más antiguo: se toman los primeros y se invierten (sin copiar todo).
+    evolucion: resumenIntentos
+      .slice(0, PUNTOS_EVOLUCION)
       .reverse()
-      .slice(-30)
       .map((i) => ({ fecha: i.fecha.toISOString(), porcentaje: i.porcentaje, titulo: i.titulo, analisisId: i.analisisId })),
     titulos,
   };
