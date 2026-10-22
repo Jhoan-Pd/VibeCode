@@ -16,7 +16,7 @@ export function TextoConCodigo({ texto }: { texto: string }) {
  * El código se aparta primero (así `2 ** i` no se confunde con negrita) y luego se aplica la
  * negrita, que puede contener código: **`fetch`** también funciona.
  */
-export function formatear(texto: string): ReactNode[] {
+function formatear(texto: string): ReactNode[] {
   const codigos: string[] = [];
   const protegido = texto.replace(/`([^`]+)`/g, (_, c: string) => `${MARCA}${codigos.push(c) - 1}${MARCA}`);
 

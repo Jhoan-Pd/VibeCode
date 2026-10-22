@@ -19,4 +19,3 @@ export const NIVEL_INFO: Record<NivelUsuario, { label: string; descripcion: stri
   },
 };
 
-export type EstadoAnalisisUI = "PENDIENTE" | "PROCESANDO" | "COMPLETO" | "ERROR";

@@ -413,13 +413,3 @@ export const DEMO_VISTA: AnalisisVista = {
   hallazgos: DEMO_HALLAZGOS,
   quiz: { id: "demo", preguntas: DEMO_PREGUNTAS.map(aPreguntaPublica), intentos: [] },
 };
-
-export const DEMO_ANALISIS = {
-  titulo: "fetchWithRetry + memoizeAsync (ejemplo)",
-  lenguaje: "javascript",
-  nivel: "INTERMEDIO" as const,
-  codigo: DEMO_CODIGO,
-  resumen: DEMO_RESUMEN,
-  bloques: DEMO_BLOQUES,
-  diagrama: DEMO_DIAGRAMA,
-};

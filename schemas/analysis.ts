@@ -63,8 +63,6 @@ export const DiagramasEstructuralesSchema = z.object({
   clases: DiagramaSchema.nullable(),
   secuencia: DiagramaSchema.nullable(),
 });
-export type DiagramasEstructurales = z.infer<typeof DiagramasEstructuralesSchema>;
-
 /* ---------- Glosario ---------- */
 
 const lineaOpcional = z.coerce.number().int().min(1).nullable().optional();

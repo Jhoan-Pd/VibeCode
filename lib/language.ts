@@ -142,7 +142,7 @@ const REGLAS: Record<LanguageId, Regla[]> = {
 };
 
 /** Puntaje por lenguaje: suma de los pesos de las reglas que aparecen en el código. */
-export function scoreLanguages(codigo: string): Record<LanguageId, number> {
+function scoreLanguages(codigo: string): Record<LanguageId, number> {
   const puntaje = (id: LanguageId) => REGLAS[id].reduce((total, [regex, peso]) => total + (regex.test(codigo) ? peso : 0), 0);
   return Object.fromEntries(LANGUAGE_IDS.map((id) => [id, puntaje(id)])) as Record<LanguageId, number>;
 }
@@ -175,10 +175,4 @@ export function detectLanguage(codigo: string, nombreArchivo?: string): Language
   ];
   const [id, puntos] = maxPor(candidatos, ([, p]) => p)!;
   return puntos >= 3 ? id : "plaintext";
-}
-
-const IDS = new Set<string>(LANGUAGE_IDS);
-
-export function isLanguageId(valor: string): valor is LanguageId {
-  return IDS.has(valor);
 }
