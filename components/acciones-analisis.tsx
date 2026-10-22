@@ -6,7 +6,7 @@ import { Check, Copy, Download, Link2, Link2Off, Printer, Share2 } from "lucide-
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/misc";
-import { SIN_CONEXION } from "@/lib/mensajes";
+import { pedirJson } from "@/lib/client/api";
 
 /** Exportar (Markdown / PDF) y compartir con enlace público de solo lectura. */
 export function AccionesAnalisis({ analisisId, tokenInicial }: { analisisId: string; tokenInicial: string | null }) {
@@ -23,20 +23,14 @@ export function AccionesAnalisis({ analisisId, tokenInicial }: { analisisId: str
   async function cambiar(metodo: "POST" | "DELETE") {
     setCargando(true);
     setError(null);
-    try {
-      const res = await fetch(`/api/analysis/${analisisId}/compartir`, { method: metodo });
-      const data = (await res.json().catch(() => ({}))) as { token?: string; error?: string };
-      if (!res.ok) {
-        setError(data.error ?? "No se pudo actualizar el enlace.");
-        return;
-      }
-      setToken(metodo === "POST" ? (data.token ?? null) : null);
-      setCopiado(false);
-    } catch {
-      setError(SIN_CONEXION);
-    } finally {
-      setCargando(false);
+    const r = await pedirJson<{ token?: string }>(`/api/analysis/${analisisId}/compartir`, { metodo, errorPorDefecto: "No se pudo actualizar el enlace." });
+    setCargando(false);
+    if (!r.ok) {
+      setError(r.error);
+      return;
     }
+    setToken(metodo === "POST" ? (r.datos.token ?? null) : null);
+    setCopiado(false);
   }
 
   async function copiar() {

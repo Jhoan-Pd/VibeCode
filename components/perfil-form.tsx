@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
 import { Alert, Spinner } from "@/components/ui/misc";
 import type { NivelUsuario } from "@/schemas/common";
-import { SIN_CONEXION } from "@/lib/mensajes";
+import { pedirJson } from "@/lib/client/api";
 
 export function PerfilForm({ nombreInicial, nivelInicial, email }: { nombreInicial: string; nivelInicial: NivelUsuario; email: string }) {
   const router = useRouter();
@@ -20,24 +20,18 @@ export function PerfilForm({ nombreInicial, nivelInicial, email }: { nombreInici
     e.preventDefault();
     setCargando(true);
     setMensaje(null);
-    try {
-      const res = await fetch("/api/perfil", {
-        method: "PATCH",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ nivel, ...(nombre.trim().length >= 2 ? { nombre: nombre.trim() } : {}) }),
-      });
-      if (!res.ok) {
-        const data = (await res.json().catch(() => ({}))) as { error?: string };
-        setMensaje({ tipo: "error", texto: data.error ?? "No se pudo guardar." });
-      } else {
-        setMensaje({ tipo: "success", texto: "Perfil actualizado. Tus próximos análisis usarán este nivel." });
-        router.refresh();
-      }
-    } catch {
-      setMensaje({ tipo: "error", texto: SIN_CONEXION });
-    } finally {
-      setCargando(false);
+    const r = await pedirJson("/api/perfil", {
+      metodo: "PATCH",
+      cuerpo: { nivel, ...(nombre.trim().length >= 2 ? { nombre: nombre.trim() } : {}) },
+      errorPorDefecto: "No se pudo guardar.",
+    });
+    setCargando(false);
+    if (!r.ok) {
+      setMensaje({ tipo: "error", texto: r.error });
+      return;
     }
+    setMensaje({ tipo: "success", texto: "Perfil actualizado. Tus próximos análisis usarán este nivel." });
+    router.refresh();
   }
 
   return (

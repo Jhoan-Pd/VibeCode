@@ -6,7 +6,7 @@ import { RefreshCw } from "lucide-react";
 import { Button, type ButtonProps } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/misc";
 import type { Etapa } from "@/schemas/analysis";
-import { SIN_CONEXION } from "@/lib/mensajes";
+import { pedirJson } from "@/lib/client/api";
 
 /** Botón que vuelve a generar UNA etapa de un análisis (resumen, líneas o diagrama). */
 export function RegenerarEtapa({
@@ -22,23 +22,10 @@ export function RegenerarEtapa({
   async function regenerar() {
     setCargando(true);
     setError(null);
-    try {
-      const res = await fetch(`/api/analysis/${analisisId}/regenerar`, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ etapa }),
-      });
-      if (!res.ok) {
-        const data = (await res.json().catch(() => ({}))) as { error?: string };
-        setError(data.error ?? "No se pudo regenerar esta sección.");
-      } else {
-        router.refresh();
-      }
-    } catch {
-      setError(SIN_CONEXION);
-    } finally {
-      setCargando(false);
-    }
+    const r = await pedirJson(`/api/analysis/${analisisId}/regenerar`, { cuerpo: { etapa }, errorPorDefecto: "No se pudo regenerar esta sección." });
+    setCargando(false);
+    if (r.ok) router.refresh();
+    else setError(r.error);
   }
 
   return (
