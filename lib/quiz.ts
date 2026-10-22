@@ -1,3 +1,4 @@
+import { unicosPor } from "@/lib/colecciones";
 import {
   UMBRAL_APROBACION,
   type NivelComprension,
@@ -51,6 +52,15 @@ export function barajarDistinto(n: number, semilla: string): number[] {
   return indices;
 }
 
+/** Inversa de una permutación en O(n): si `p[k] = i`, entonces `inversa[i] = k`. */
+export function invertirPermutacion(p: readonly number[]): number[] {
+  const inversa = new Array<number>(p.length);
+  p.forEach((original, posicion) => {
+    inversa[original] = posicion;
+  });
+  return inversa;
+}
+
 /* ---------- De la salida del LLM al formato guardado ---------- */
 
 export type PreguntaNueva = Omit<PreguntaGuardada, "id">;
@@ -85,8 +95,8 @@ export function prepararPreguntas(preguntas: PreguntaLLM[], totalLineas = Number
         // permutacion[k] = índice ORIGINAL (correcto) del paso que se muestra en la posición k.
         const permutacion = barajarDistinto(p.pasos.length, p.enunciado + p.pasos.join("|"));
         const opciones = permutacion.map((i) => p.pasos[i]);
-        // Respuesta correcta: posiciones mostradas, en el orden real de ejecución.
-        const respuestaCorrecta = p.pasos.map((_, original) => permutacion.indexOf(original));
+        // Respuesta correcta: posiciones mostradas, en el orden real de ejecución (la permutación inversa).
+        const respuestaCorrecta = invertirPermutacion(permutacion);
         return { ...comun, opciones, respuestaCorrecta };
       }
       default:
@@ -99,18 +109,20 @@ export function prepararPreguntas(preguntas: PreguntaLLM[], totalLineas = Number
  * Validación semántica del quiz generado (lista vacía = válido). Los rangos de línea no se validan
  * aquí: prepararPreguntas los corrige de forma determinista.
  */
+/** ¿Hay textos repetidos sin distinguir mayúsculas ni espacios en los extremos? */
+function hayRepetidos(textos: readonly string[]): boolean {
+  return new Set(textos.map((t) => t.trim().toLowerCase())).size !== textos.length;
+}
+
 export function validarQuiz(quiz: QuizLLM): string[] {
   const problemas: string[] = [];
   quiz.preguntas.forEach((p, i) => {
     const n = i + 1;
     if ("opciones" in p) {
       if (p.correcta >= p.opciones.length) problemas.push(`Pregunta ${n}: "correcta" (${p.correcta}) no es un índice válido de "opciones".`);
-      const unicas = new Set(p.opciones.map((o) => o.trim().toLowerCase()));
-      if (unicas.size !== p.opciones.length) problemas.push(`Pregunta ${n}: hay opciones repetidas.`);
+      if (hayRepetidos(p.opciones)) problemas.push(`Pregunta ${n}: hay opciones repetidas.`);
     }
-    if (p.tipo === "ORDENAR" && new Set(p.pasos.map((x) => x.trim().toLowerCase())).size !== p.pasos.length) {
-      problemas.push(`Pregunta ${n}: hay pasos repetidos.`);
-    }
+    if (p.tipo === "ORDENAR" && hayRepetidos(p.pasos)) problemas.push(`Pregunta ${n}: hay pasos repetidos.`);
   });
   const tipos = new Set(quiz.preguntas.map((p) => p.tipo));
   if (tipos.size < 3) problemas.push(`Usa al menos 3 tipos de pregunta distintos (ahora hay ${tipos.size}).`);
@@ -162,19 +174,14 @@ export function calificar(preguntas: PreguntaGuardada[], respuestas: Record<stri
   const aciertos = resultados.filter((r) => r.correcta).length;
   const porcentaje = total === 0 ? 0 : Math.round((aciertos / total) * 1000) / 10;
 
-  const repasar: ResultadoQuiz["repasar"] = [];
-  if (porcentaje < UMBRAL_APROBACION) {
-    const vistos = new Set<string>();
-    for (const r of resultados) {
-      if (r.correcta || r.lineaInicio == null) continue;
-      const fin = r.lineaFin ?? r.lineaInicio;
-      const clave = `${r.lineaInicio}-${fin}`;
-      if (vistos.has(clave)) continue;
-      vistos.add(clave);
-      repasar.push({ lineaInicio: r.lineaInicio, lineaFin: fin, concepto: r.concepto });
-    }
-    repasar.sort((a, b) => a.lineaInicio - b.lineaInicio);
-  }
-
+  const repasar = porcentaje < UMBRAL_APROBACION ? lineasARepasar(resultados) : [];
   return { aciertos, total, porcentaje, nivelComprension: nivelComprension(porcentaje), resultados, repasar };
+}
+
+/** Rangos de las preguntas falladas, sin duplicados y ordenados por línea. */
+function lineasARepasar(resultados: readonly ResultadoPregunta[]): ResultadoQuiz["repasar"] {
+  const rangos = resultados.flatMap((r) =>
+    r.correcta || r.lineaInicio == null ? [] : [{ lineaInicio: r.lineaInicio, lineaFin: r.lineaFin ?? r.lineaInicio, concepto: r.concepto }],
+  );
+  return unicosPor(rangos, (r) => `${r.lineaInicio}-${r.lineaFin}`).sort((a, b) => a.lineaInicio - b.lineaInicio);
 }

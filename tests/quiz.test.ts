@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { barajarDistinto, calificar, esCorrecta, nivelComprension, prepararPreguntas, validarQuiz } from "@/lib/quiz";
+import { barajarDistinto, calificar, invertirPermutacion, esCorrecta, nivelComprension, prepararPreguntas, validarQuiz } from "@/lib/quiz";
 import { QuizLLMSchema, aPreguntaPublica, type PreguntaGuardada, type QuizLLM } from "@/schemas/quiz";
 
 const QUIZ_LLM: QuizLLM = {
@@ -114,5 +114,16 @@ describe("calificación del quiz", () => {
 
   it("niveles de comprensión por umbral", () => {
     expect([95, 70, 69.9, 50, 10].map(nivelComprension)).toEqual(["Excelente", "Buena", "Parcial", "Parcial", "Insuficiente"]);
+  });
+});
+
+describe("invertirPermutacion", () => {
+  it("compone con la original para dar la identidad", () => {
+    for (let n = 1; n <= 8; n++) {
+      const p = barajarDistinto(n, `semilla-${n}`);
+      const inv = invertirPermutacion(p);
+      expect(p.map((_, k) => inv[p[k]])).toEqual(p.map((_, k) => k));
+      expect(inv).toEqual(p.map((_, original) => p.indexOf(original)));
+    }
   });
 });
