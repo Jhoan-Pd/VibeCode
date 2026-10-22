@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { pedirJson } from "@/lib/client/api";
 import { signIn } from "next-auth/react";
 import { Github } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -102,17 +103,13 @@ export function RegisterForm({ githubHabilitado }: { githubHabilitado: boolean }
       return;
     }
     setCargando(true);
+    const registro = await pedirJson("/api/register", { cuerpo: { nombre, email, password }, errorPorDefecto: "No se pudo crear la cuenta." });
+    if (!registro.ok) {
+      setError(registro.error);
+      setCargando(false);
+      return;
+    }
     try {
-      const res = await fetch("/api/register", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ nombre, email, password }),
-      });
-      if (!res.ok) {
-        const data = (await res.json().catch(() => ({}))) as { error?: string };
-        setError(data.error ?? "No se pudo crear la cuenta.");
-        return;
-      }
       // Inicia sesión automáticamente con las credenciales recién creadas.
       const login = await signIn("credentials", { email, password, redirect: false });
       if (!login || login.error) {
@@ -123,7 +120,8 @@ export function RegisterForm({ githubHabilitado }: { githubHabilitado: boolean }
       router.push("/dashboard");
       router.refresh();
     } catch {
-      setError("No se pudo crear la cuenta. Inténtalo de nuevo.");
+      // La cuenta ya existe aunque el inicio de sesión automático falle: se manda a /login con el aviso.
+      router.push("/login?creada=1");
     } finally {
       setCargando(false);
     }
