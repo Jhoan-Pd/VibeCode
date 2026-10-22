@@ -1,44 +1,37 @@
 import { NextResponse } from "next/server";
-import { jsonError, requerirUsuario } from "@/lib/api";
-import { db } from "@/lib/db";
+import { conUsuario, jsonError, leerCuerpo, respuestaDeError } from "@/lib/api";
+import { ErrorVisible } from "@/lib/errores";
 import { mensajeLimite } from "@/lib/limites";
-import { getLLMProvider, mensajeAmigable } from "@/lib/llm";
+import { proveedorDisponible } from "@/lib/llm";
 import { RegenerarRequestSchema } from "@/schemas/analysis";
 import { AnalisisService } from "@/services/analisis.service";
-import { consumir, devolver } from "@/services/limite.service";
+import { conCupo } from "@/services/limite.service";
+import { esAnalisisPropio } from "@/services/propiedad";
 
 export const maxDuration = 60;
 export const dynamic = "force-dynamic";
 
 /**
  * POST /api/analysis/:id/regenerar { etapa } — reintenta una sola etapa o genera un quiz nuevo.
- * Cuenta como consulta secundaria a la IA (límite diario DAILY_AI_QUERIES_LIMIT).
+ * Cuenta como consulta secundaria a la IA (límite diario DAILY_AI_QUERIES_LIMIT); si falla, se devuelve.
  */
-export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const sesion = await requerirUsuario();
-  if ("respuesta" in sesion) return sesion.respuesta;
-  const { id } = await params;
+export const POST = conUsuario<{ id: string }>(async ({ req, usuarioId, params: { id } }) => {
+  const cuerpo = await leerCuerpo(req, RegenerarRequestSchema, "Etapa no válida");
+  if ("respuesta" in cuerpo) return cuerpo.respuesta;
+  if (!(await esAnalisisPropio(id, usuarioId))) return jsonError("Análisis no encontrado", 404);
 
-  const parsed = RegenerarRequestSchema.safeParse(await req.json().catch(() => null));
-  if (!parsed.success) return jsonError("Etapa no válida", 400);
+  const llm = proveedorDisponible();
+  if ("error" in llm) return jsonError(llm.error, 503);
+  const servicio = new AnalisisService(llm.proveedor);
 
-  const propio = await db.analisis.findFirst({ where: { id, usuarioId: sesion.userId }, select: { id: true } });
-  if (!propio) return jsonError("Análisis no encontrado", 404);
-
-  let servicio: AnalisisService;
   try {
-    servicio = new AnalisisService(getLLMProvider());
+    const resultado = await conCupo(usuarioId, "consultas", async () => {
+      const error = await servicio.regenerarEtapa(id, cuerpo.datos.etapa);
+      if (error) throw new ErrorVisible(error, 502);
+    });
+    if (resultado.agotado) return jsonError(mensajeLimite("consultas", resultado.limite), 429);
+    return NextResponse.json({ ok: true });
   } catch (e) {
-    return jsonError(mensajeAmigable(e), 503);
+    return respuestaDeError(e);
   }
-
-  const cupo = await consumir(sesion.userId, "consultas");
-  if (!cupo.ok) return jsonError(mensajeLimite("consultas", cupo.limite), 429);
-
-  const error = await servicio.regenerarEtapa(id, parsed.data.etapa);
-  if (error) {
-    await devolver(sesion.userId, "consultas").catch(() => {});
-    return jsonError(error, 502);
-  }
-  return NextResponse.json({ ok: true });
-}
+});

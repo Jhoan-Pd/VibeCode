@@ -1,4 +1,4 @@
-import { jsonError, requerirUsuario } from "@/lib/api";
+import { conUsuario, jsonError } from "@/lib/api";
 import { urlPublica } from "@/lib/compartir";
 import { aMarkdown, nombreArchivo } from "@/lib/exportar";
 import { cargarAnalisis } from "@/services/vista.service";
@@ -6,12 +6,8 @@ import { cargarAnalisis } from "@/services/vista.service";
 export const dynamic = "force-dynamic";
 
 /** GET /api/analysis/:id/exportar — descarga el análisis completo en Markdown (.md). */
-export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const sesion = await requerirUsuario();
-  if ("respuesta" in sesion) return sesion.respuesta;
-  const { id } = await params;
-
-  const cargado = await cargarAnalisis({ id, usuarioId: sesion.userId }, { usuarioQuiz: null, incluirQuiz: true });
+export const GET = conUsuario<{ id: string }>(async ({ req, usuarioId, params: { id } }) => {
+  const cargado = await cargarAnalisis({ id, usuarioId }, { usuarioQuiz: null, incluirQuiz: true });
   if (!cargado) return jsonError("Análisis no encontrado", 404);
   const { analisis, vista } = cargado;
 
@@ -32,4 +28,4 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
       "x-content-type-options": "nosniff",
     },
   });
-}
+});
