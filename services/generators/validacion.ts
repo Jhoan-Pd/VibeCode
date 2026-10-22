@@ -1,3 +1,4 @@
+import { recortarRango } from "@/lib/rango";
 import type { Bloque } from "@/schemas/analysis";
 
 /**
@@ -17,6 +18,30 @@ export function repararSolapes(bloques: Bloque[]): Bloque[] {
     ultimoFin = b.lineaFin;
   }
   return resultado;
+}
+
+/**
+ * Qué líneas del rango cubre algún bloque (índice 0 = `rango.inicio`). Usa un arreglo de
+ * diferencias: +1 donde empieza cada bloque, −1 después de donde termina, y una suma acumulada.
+ * Es O(L + B) en vez de O(L · B) de preguntar a cada línea si algún bloque la contiene.
+ */
+export function lineasCubiertas(bloques: readonly Bloque[], rango: { inicio: number; fin: number }): boolean[] {
+  const largo = Math.max(0, rango.fin - rango.inicio + 1);
+  const diferencias = new Int32Array(largo + 1);
+  for (const b of bloques) {
+    const desde = Math.max(b.lineaInicio, rango.inicio) - rango.inicio;
+    const hasta = Math.min(b.lineaFin, rango.fin) - rango.inicio;
+    if (desde > hasta) continue; // fuera del rango
+    diferencias[desde]++;
+    diferencias[hasta + 1]--;
+  }
+  const cubierta = new Array<boolean>(largo);
+  let activos = 0;
+  for (let i = 0; i < largo; i++) {
+    activos += diferencias[i];
+    cubierta[i] = activos > 0;
+  }
+  return cubierta;
 }
 
 /**
@@ -43,13 +68,16 @@ export function validarBloques(
     );
   }
 
-  const conCodigo: number[] = [];
+  const cubierta = lineasCubiertas(bloques, rango);
+  let conCodigo = 0;
+  let cubiertas = 0;
   lineasDelRango.forEach((l, i) => {
-    if (l.trim() !== "") conCodigo.push(rango.inicio + i);
+    if (l.trim() === "") return;
+    conCodigo++;
+    if (cubierta[i]) cubiertas++;
   });
-  if (conCodigo.length > 0) {
-    const cubiertas = conCodigo.filter((n) => bloques.some((b) => n >= b.lineaInicio && n <= b.lineaFin)).length;
-    const cobertura = cubiertas / conCodigo.length;
+  if (conCodigo > 0) {
+    const cobertura = cubiertas / conCodigo;
     if (cobertura < coberturaMinima) {
       problemas.push(
         `Los bloques solo cubren el ${Math.round(cobertura * 100)}% de las líneas con código del rango ${rango.inicio}-${rango.fin}. Debes explicar todo el código con lógica.`,
@@ -102,12 +130,6 @@ export function ajustarRango<T extends { lineaInicio?: number | null; lineaFin?:
   item: T,
   totalLineas: number,
 ): Omit<T, "lineaInicio" | "lineaFin"> & { lineaInicio: number | null; lineaFin: number | null } {
-  const { lineaInicio, lineaFin } = normalizarRango(item);
-  if (lineaInicio == null || lineaFin == null) return { ...item, lineaInicio: null, lineaFin: null };
-  let a = Math.min(lineaInicio, lineaFin);
-  let b = Math.max(lineaInicio, lineaFin);
-  if (a > totalLineas || b < 1) return { ...item, lineaInicio: null, lineaFin: null };
-  a = Math.max(1, a);
-  b = Math.min(totalLineas, b);
-  return { ...item, lineaInicio: a, lineaFin: b };
+  const rango = recortarRango(item.lineaInicio, item.lineaFin, totalLineas);
+  return { ...item, lineaInicio: rango?.inicio ?? null, lineaFin: rango?.fin ?? null };
 }

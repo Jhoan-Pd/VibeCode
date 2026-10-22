@@ -4,7 +4,7 @@ import { dividirLineas } from "@/lib/chunking";
 import { normalizarMermaid, validarMermaidBasico } from "@/lib/mermaid";
 import { AnalyzeRequestSchema, BloquesSchema, DiagramaSchema, ResumenSchema } from "@/schemas/analysis";
 import { RegisterSchema } from "@/schemas/auth";
-import { repararSolapes, validarBloques } from "@/services/generators/validacion";
+import { lineasCubiertas, repararSolapes, validarBloques } from "@/services/generators/validacion";
 
 describe("AnalyzeRequestSchema", () => {
   it("acepta una solicitud válida y pone lenguaje 'auto' por defecto", () => {
@@ -99,5 +99,28 @@ describe("mermaid: normalización y validación básica", () => {
     expect(validarMermaidBasico("flowchart TD\n  A[\"solo\"]").length).toBeGreaterThan(0);
     expect(validarMermaidBasico('flowchart TD\n  A["abierto --> B["x"]').length).toBeGreaterThan(0);
     expect(validarMermaidBasico(normalizarMermaid(DEMO_DIAGRAMA.mermaid))).toEqual([]);
+  });
+});
+
+describe("lineasCubiertas (arreglo de diferencias)", () => {
+  const b = (lineaInicio: number, lineaFin: number) => ({ lineaInicio, lineaFin, titulo: "t", explicacion: "e" });
+
+  it("marca la unión de los bloques recortada al rango", () => {
+    expect(lineasCubiertas([b(1, 2), b(4, 4), b(9, 30)], { inicio: 1, fin: 10 })).toEqual([true, true, false, true, false, false, false, false, true, true]);
+  });
+
+  it("coincide con la versión ingenua O(L·B) en casos aleatorios", () => {
+    let semilla = 7;
+    const azar = (n: number) => (semilla = (semilla * 1103515245 + 12345) % 2 ** 31) % n;
+    for (let caso = 0; caso < 50; caso++) {
+      const rango = { inicio: 1 + azar(20), fin: 0 };
+      rango.fin = rango.inicio + azar(40);
+      const bloques = Array.from({ length: azar(8) }, () => {
+        const ini = azar(70);
+        return b(ini, ini + azar(10));
+      });
+      const ingenua = Array.from({ length: rango.fin - rango.inicio + 1 }, (_, i) => bloques.some((x) => rango.inicio + i >= x.lineaInicio && rango.inicio + i <= x.lineaFin));
+      expect(lineasCubiertas(bloques, rango)).toEqual(ingenua);
+    }
   });
 });
