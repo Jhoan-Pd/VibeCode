@@ -1,4 +1,5 @@
 import type { AnalysisEvent } from "@/lib/analysis-events";
+import { registroPorClave } from "@/lib/colecciones";
 import { ETAPAS, type Etapa } from "@/schemas/analysis";
 
 /**
@@ -19,7 +20,7 @@ export interface ProgresoAnalisis {
 
 export const PROGRESO_INICIAL: ProgresoAnalisis = {
   analisisId: null,
-  etapas: Object.fromEntries(ETAPAS.map((e) => [e, "pendiente"])) as Record<Etapa, EstadoEtapa>,
+  etapas: registroPorClave<Etapa, EstadoEtapa>(ETAPAS, () => "pendiente"),
   mensajes: {},
   terminado: null,
 };

@@ -7,7 +7,7 @@
  * siempre puede corregir el lenguaje manualmente en el selector.
  */
 
-import { maxPor } from "./colecciones";
+import { maxPor, registroPorClave } from "./colecciones";
 
 export const LANGUAGES = [
   { id: "javascript", label: "JavaScript" },
@@ -144,13 +144,20 @@ const REGLAS: Record<LanguageId, Regla[]> = {
 /** Puntaje por lenguaje: suma de los pesos de las reglas que aparecen en el código. */
 function scoreLanguages(codigo: string): Record<LanguageId, number> {
   const puntaje = (id: LanguageId) => REGLAS[id].reduce((total, [regex, peso]) => total + (regex.test(codigo) ? peso : 0), 0);
-  return Object.fromEntries(LANGUAGE_IDS.map((id) => [id, puntaje(id)])) as Record<LanguageId, number>;
+  return registroPorClave(LANGUAGE_IDS, puntaje);
 }
 
 /**
  * Detecta el lenguaje. Si hay nombre de archivo con extensión conocida, tiene prioridad.
  * Devuelve "plaintext" si no hay evidencia suficiente.
  */
+const IDS = new Set<string>(LANGUAGE_IDS);
+
+/** Valor de un <select> de lenguaje: un id conocido o "auto" (cualquier otra cosa se trata como "auto"). */
+export function lenguajeElegido(valor: string): LanguageId | "auto" {
+  return IDS.has(valor) ? (valor as LanguageId) : "auto";
+}
+
 export function detectLanguage(codigo: string, nombreArchivo?: string): LanguageOrPlain {
   if (nombreArchivo) {
     const porExtension = languageFromFilename(nombreArchivo);

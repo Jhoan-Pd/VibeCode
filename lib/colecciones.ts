@@ -55,3 +55,12 @@ export function maxPor<T>(items: readonly T[], valor: (item: T) => number): T | 
   }
   return mejor;
 }
+
+/**
+ * Registro con una entrada por cada clave de un conjunto cerrado (p. ej. las etapas). TypeScript
+ * no puede probar que `Object.fromEntries` cubre todas las claves; el cast queda solo aquí, junto a
+ * la garantía: se recorre la lista completa de claves.
+ */
+export function registroPorClave<K extends string, V>(claves: readonly K[], valor: (clave: K) => V): Record<K, V> {
+  return Object.fromEntries(claves.map((k) => [k, valor(k)])) as Record<K, V>;
+}
