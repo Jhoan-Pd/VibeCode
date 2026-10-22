@@ -4,7 +4,9 @@
  * para poder reintentar con el LLM antes de guardar nada.
  */
 
-export type TipoMermaid = "FLUJO" | "CLASES" | "SECUENCIA";
+/** Tipos de diagrama soportados (fuente única: de aquí salen el tipo, los esquemas Zod y las pestañas). */
+export const TIPOS_MERMAID = ["FLUJO", "CLASES", "SECUENCIA"] as const;
+export type TipoMermaid = (typeof TIPOS_MERMAID)[number];
 
 const ENCABEZADOS = /^(flowchart|graph|sequenceDiagram|classDiagram|stateDiagram|erDiagram)\b/;
 

@@ -1,4 +1,4 @@
-import type { TipoMermaid } from "@/lib/mermaid";
+import { TIPOS_MERMAID, type TipoMermaid } from "@/lib/mermaid";
 import type { Bloque, Resumen, SEVERIDADES, TIPOS_HALLAZGO } from "./analysis";
 import type { PreguntaPublica } from "./quiz";
 
@@ -57,7 +57,8 @@ export interface AnalisisVista {
   quiz: QuizVista | null;
 }
 
-export const ORDEN_DIAGRAMAS: TipoMermaid[] = ["FLUJO", "CLASES", "SECUENCIA"];
+/** Orden de las pestañas de diagramas: el de TIPOS_MERMAID. */
+export const ORDEN_DIAGRAMAS: readonly TipoMermaid[] = TIPOS_MERMAID;
 
 export const DIAGRAMA_INFO: Record<TipoMermaid, string> = {
   FLUJO: "Flujo",
