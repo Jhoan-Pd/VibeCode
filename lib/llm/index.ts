@@ -1,6 +1,6 @@
 import "server-only";
 import { crearProveedorDesdeEntorno } from "./fabrica";
-import type { LLMProvider } from "./types";
+import { mensajeAmigable, type LLMProvider } from "./types";
 
 export * from "./types";
 export { GeminiProvider } from "./gemini";
@@ -16,4 +16,17 @@ let instancia: LLMProvider | null = null;
 export function getLLMProvider(): LLMProvider {
   instancia ??= crearProveedorDesdeEntorno(process.env);
   return instancia;
+}
+
+/**
+ * Variante de `getLLMProvider` para las rutas: en lugar de lanzar cuando falta la clave o la
+ * configuración es inválida, devuelve el mensaje amigable para responder 503.
+ */
+export function proveedorDisponible(): { proveedor: LLMProvider } | { error: string } {
+  try {
+    return { proveedor: getLLMProvider() };
+  } catch (e) {
+    console.error("[llm] proveedor no disponible:", e);
+    return { error: mensajeAmigable(e) };
+  }
 }
