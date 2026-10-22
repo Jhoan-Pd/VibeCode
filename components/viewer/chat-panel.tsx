@@ -8,11 +8,12 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Alert, Spinner } from "@/components/ui/misc";
 import { cn } from "@/lib/utils";
+import type { RangoLineas } from "@/lib/visor";
 import { MAX_MENSAJE_CHAT, type MensajeChatVista } from "@/schemas/chat";
 import { BotonLineas, etiquetaLineas, type IrALineas } from "./boton-lineas";
 import { pedirJson } from "@/lib/client/api";
 
-export type Seleccion = { inicio: number; fin: number } | null;
+export type Seleccion = RangoLineas | null;
 
 const SUGERENCIAS = ["¿Por qué se hace así y no de otra forma?", "¿Qué pasaría si elimino estas líneas?", "Explícamelo con un ejemplo concreto"];
 
