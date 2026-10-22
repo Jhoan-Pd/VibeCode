@@ -3,7 +3,7 @@ import { ETAPAS_UI } from "@/lib/analysis-events";
 import { Spinner } from "@/components/ui/misc";
 import type { Etapa } from "@/schemas/analysis";
 
-export type EstadoEtapa = "pendiente" | "running" | "done" | "error";
+import type { EstadoEtapa } from "@/lib/client/progreso-analisis";
 
 /** Indicador de progreso por etapas (resumen, líneas, diagramas, glosario, auditoría y quiz) alimentado por el stream del servidor. */
 export function AnalysisProgress({ etapas, mensajes }: { etapas: Record<Etapa, EstadoEtapa>; mensajes?: Partial<Record<Etapa, string>> }) {
