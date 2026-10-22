@@ -10,26 +10,41 @@ export type TipoMermaid = (typeof TIPOS_MERMAID)[number];
 
 const ENCABEZADOS = /^(flowchart|graph|sequenceDiagram|classDiagram|stateDiagram|erDiagram)\b/;
 
-/** Encabezado esperado según el tipo de diagrama. */
-export const ENCABEZADO_POR_TIPO: Record<TipoMermaid, string> = {
-  FLUJO: "flowchart TD",
-  CLASES: "classDiagram",
-  SECUENCIA: "sequenceDiagram",
+/** Lo que define a cada tipo de diagrama, en una sola tabla (agregar un tipo es agregar una fila). */
+interface ReglaDiagrama {
+  /** Encabezado que se antepone si el LLM lo omite. */
+  encabezado: string;
+  patronEncabezado: RegExp;
+  /** Flechas o relaciones mínimas que debe contener. */
+  patronRelacion: RegExp;
+  /** Problema que se le devuelve al LLM si no hay ninguna relación. */
+  sinRelacion: string;
+}
+
+const REGLAS: Record<TipoMermaid, ReglaDiagrama> = {
+  FLUJO: {
+    encabezado: "flowchart TD",
+    patronEncabezado: /^(flowchart|graph)\b/,
+    patronRelacion: /-->|---|==>|-\.->/,
+    sinRelacion: "El diagrama no contiene ninguna flecha entre nodos.",
+  },
+  CLASES: {
+    encabezado: "classDiagram",
+    patronEncabezado: /^classDiagram\b/,
+    // Un diagrama de clases puede tener una sola clase: basta una definición o una relación.
+    patronRelacion: /\bclass\s+[A-Za-z_]|<\|--|--\|>|\*--|--\*|o--|--o|-->|<--|\.\.>|<\.\./,
+    sinRelacion: "El diagrama de clases no define ninguna clase ni relación.",
+  },
+  SECUENCIA: {
+    encabezado: "sequenceDiagram",
+    patronEncabezado: /^sequenceDiagram\b/,
+    patronRelacion: /->>|-->>|->|-->|-x|--x|-\)|--\)/,
+    sinRelacion: "El diagrama de secuencia no contiene ningún mensaje entre participantes (por ejemplo A->>B: texto).",
+  },
 };
 
-const PATRON_ENCABEZADO: Record<TipoMermaid, RegExp> = {
-  FLUJO: /^(flowchart|graph)\b/,
-  CLASES: /^classDiagram\b/,
-  SECUENCIA: /^sequenceDiagram\b/,
-};
-
-/** Flechas o relaciones mínimas que debe contener cada tipo de diagrama. */
-const PATRON_RELACION: Record<TipoMermaid, RegExp> = {
-  FLUJO: /-->|---|==>|-\.->/,
-  // Un diagrama de clases puede tener una sola clase: basta una definición o una relación.
-  CLASES: /\bclass\s+[A-Za-z_]|<\|--|--\|>|\*--|--\*|o--|--o|-->|<--|\.\.>|<\.\./,
-  SECUENCIA: /->>|-->>|->|-->|-x|--x|-\)|--\)/,
-};
+/** Máximo de líneas no vacías: un diagrama más grande no se lee en pantalla. */
+const MAX_LINEAS_DIAGRAMA = 80;
 
 export function normalizarMermaid(texto: string, tipo: TipoMermaid = "FLUJO"): string {
   let t = texto.trim();
@@ -51,7 +66,7 @@ export function normalizarMermaid(texto: string, tipo: TipoMermaid = "FLUJO"): s
   const primera = lineas.findIndex((l) => l.trim() !== "" && !/^\s*%%/.test(l));
   if (primera === -1) return "";
   if (!ENCABEZADOS.test(lineas[primera].trim())) {
-    lineas.splice(primera, 0, ENCABEZADO_POR_TIPO[tipo]);
+    lineas.splice(primera, 0, REGLAS[tipo].encabezado);
   }
   return lineas.join("\n").trim();
 }
@@ -59,22 +74,13 @@ export function normalizarMermaid(texto: string, tipo: TipoMermaid = "FLUJO"): s
 /** Comprobaciones baratas de forma. Devuelve una lista de problemas (vacía = parece correcto). */
 export function validarMermaidBasico(mermaid: string, tipo: TipoMermaid = "FLUJO"): string[] {
   const problemas: string[] = [];
+  const regla = REGLAS[tipo];
   const lineas = mermaid.split("\n").filter((l) => l.trim() !== "");
-  if (!PATRON_ENCABEZADO[tipo].test(lineas[0]?.trim() ?? "")) {
-    problemas.push(`La primera línea debe ser '${ENCABEZADO_POR_TIPO[tipo]}'.`);
-  }
-  if (!PATRON_RELACION[tipo].test(lineas.slice(1).join("\n"))) {
-    problemas.push(
-      tipo === "SECUENCIA"
-        ? "El diagrama de secuencia no contiene ningún mensaje entre participantes (por ejemplo A->>B: texto)."
-        : tipo === "CLASES"
-          ? "El diagrama de clases no define ninguna clase ni relación."
-          : "El diagrama no contiene ninguna flecha entre nodos.",
-    );
-  }
+  if (!regla.patronEncabezado.test(lineas[0]?.trim() ?? "")) problemas.push(`La primera línea debe ser '${regla.encabezado}'.`);
+  if (!regla.patronRelacion.test(lineas.slice(1).join("\n"))) problemas.push(regla.sinRelacion);
   const comillas = (mermaid.match(/"/g) ?? []).length;
   if (comillas % 2 !== 0) problemas.push("Hay un número impar de comillas dobles: algún texto no está cerrado.");
-  if (lineas.length > 80) problemas.push("El diagrama es demasiado grande (más de 80 líneas); resume los pasos.");
+  if (lineas.length > MAX_LINEAS_DIAGRAMA) problemas.push(`El diagrama es demasiado grande (más de ${MAX_LINEAS_DIAGRAMA} líneas); resume los pasos.`);
   if (tipo === "SECUENCIA" && lineas.some((l) => /;\s*$/.test(l))) {
     problemas.push("No termines las líneas del diagrama de secuencia con punto y coma.");
   }
