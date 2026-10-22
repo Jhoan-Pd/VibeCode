@@ -9,6 +9,8 @@
  *  - El promedio de comprensión usa el MEJOR intento de cada quiz, para no castigar los reintentos.
  */
 
+import { agruparPor, contarPor } from "./colecciones";
+
 export const UMBRAL_DOMINADO = 80;
 export const UMBRAL_EN_PROGRESO = 50;
 /** Peso del intento anterior respecto al siguiente (0.6 = cada respuesta nueva pesa ~1.7× la previa). */
@@ -55,41 +57,46 @@ export function estadoDe(dominio: number): EstadoConcepto {
 }
 
 const redondear = (n: number) => Math.round(n * 10) / 10;
+const promedio = (xs: readonly number[]) => xs.reduce((a, b) => a + b, 0) / xs.length;
+const contar = <T>(xs: readonly T[], pred: (x: T) => boolean) => xs.reduce((n, x) => n + (pred(x) ? 1 : 0), 0);
+
+/**
+ * Media ponderada exponencial de una serie cronológica de aciertos, en %. Se calcula en una sola
+ * pasada con la recurrencia S ← S·d + x, W ← W·d + 1 (equivale a pesar la respuesta i con d^(n-1-i)),
+ * así que es O(n) y no necesita potencias.
+ */
+export function dominioPonderado(aciertosEnOrden: readonly boolean[], decaimiento = DECAIMIENTO): number {
+  let suma = 0;
+  let pesos = 0;
+  for (const correcta of aciertosEnOrden) {
+    suma = suma * decaimiento + (correcta ? 1 : 0);
+    pesos = pesos * decaimiento + 1;
+  }
+  return pesos === 0 ? 0 : redondear((suma / pesos) * 100);
+}
+
+const porFecha = (a: { fecha: Date }, b: { fecha: Date }) => a.fecha.getTime() - b.fecha.getTime();
 
 /** Agrupa las respuestas por concepto y calcula el dominio ponderado. Orden: peor dominio primero. */
 export function dominioPorConcepto(respuestas: RespuestaConcepto[]): ConceptoProgreso[] {
-  const grupos = new Map<string, { nombre: string; items: RespuestaConcepto[] }>();
-  for (const r of respuestas) {
-    if (!r.concepto?.trim()) continue;
-    const clave = normalizarConcepto(r.concepto);
-    const g = grupos.get(clave) ?? { nombre: r.concepto.trim(), items: [] };
-    g.items.push(r);
-    grupos.set(clave, g);
-  }
+  const conConcepto = respuestas.filter((r): r is RespuestaConcepto & { concepto: string } => !!r.concepto?.trim());
+  const grupos = agruparPor(conConcepto, (r) => normalizarConcepto(r.concepto));
 
-  const resultado: ConceptoProgreso[] = [];
-  for (const { nombre, items } of grupos.values()) {
-    const ordenadas = [...items].sort((a, b) => a.fecha.getTime() - b.fecha.getTime());
-    let suma = 0;
-    let pesos = 0;
-    ordenadas.forEach((r, i) => {
-      const peso = DECAIMIENTO ** (ordenadas.length - 1 - i);
-      suma += (r.correcta ? 1 : 0) * peso;
-      pesos += peso;
-    });
-    const dominio = redondear((suma / pesos) * 100);
-    const fallada = [...ordenadas].reverse().find((r) => !r.correcta);
-    const ref = fallada ?? ordenadas[ordenadas.length - 1];
-    resultado.push({
-      nombre,
+  const resultado = [...grupos.values()].map((items): ConceptoProgreso => {
+    const ordenadas = [...items].sort(porFecha);
+    const dominio = dominioPonderado(ordenadas.map((r) => r.correcta));
+    // Dónde repasar: la última fallada; si no falló ninguna, la última respondida.
+    const ref = ordenadas.findLast((r) => !r.correcta) ?? ordenadas[ordenadas.length - 1];
+    return {
+      nombre: items[0].concepto.trim(),
       dominio,
-      aciertos: ordenadas.filter((r) => r.correcta).length,
+      aciertos: contar(ordenadas, (r) => r.correcta),
       total: ordenadas.length,
       estado: estadoDe(dominio),
       pocasRespuestas: ordenadas.length < 2,
-      repaso: ref ? { analisisId: ref.analisisId, lineaInicio: ref.lineaInicio, lineaFin: ref.lineaFin } : null,
-    });
-  }
+      repaso: { analisisId: ref.analisisId, lineaInicio: ref.lineaInicio, lineaFin: ref.lineaFin },
+    };
+  });
   return resultado.sort((a, b) => a.dominio - b.dominio || b.total - a.total || a.nombre.localeCompare(b.nombre, "es"));
 }
 
@@ -105,8 +112,7 @@ export interface IntentoResumen {
 export function promedioMejoresIntentos(intentos: IntentoResumen[]): number | null {
   const mejores = new Map<string, number>();
   for (const i of intentos) mejores.set(i.quizId, Math.max(mejores.get(i.quizId) ?? 0, i.porcentaje));
-  if (mejores.size === 0) return null;
-  return redondear([...mejores.values()].reduce((a, b) => a + b, 0) / mejores.size);
+  return mejores.size === 0 ? null : redondear(promedio([...mejores.values()]));
 }
 
 /**
@@ -115,17 +121,14 @@ export function promedioMejoresIntentos(intentos: IntentoResumen[]): number | nu
  */
 export function tendencia(intentos: IntentoResumen[]): number | null {
   if (intentos.length < 4) return null;
-  const orden = [...intentos].sort((a, b) => a.fecha.getTime() - b.fecha.getTime());
-  const mitad = Math.floor(orden.length / 2);
-  const prom = (xs: IntentoResumen[]) => xs.reduce((a, b) => a + b.porcentaje, 0) / xs.length;
-  return redondear(prom(orden.slice(orden.length - mitad)) - prom(orden.slice(0, mitad)));
+  const porcentajes = [...intentos].sort(porFecha).map((i) => i.porcentaje);
+  const mitad = Math.floor(porcentajes.length / 2);
+  return redondear(promedio(porcentajes.slice(-mitad)) - promedio(porcentajes.slice(0, mitad)));
 }
 
 /** Cuenta análisis por lenguaje (mayor a menor). */
 export function conteoPorLenguaje(lenguajes: string[]): { lenguaje: string; cantidad: number }[] {
-  const m = new Map<string, number>();
-  for (const l of lenguajes) m.set(l, (m.get(l) ?? 0) + 1);
-  return [...m.entries()].map(([lenguaje, cantidad]) => ({ lenguaje, cantidad })).sort((a, b) => b.cantidad - a.cantidad || a.lenguaje.localeCompare(b.lenguaje));
+  return [...contarPor(lenguajes, (l) => l).entries()].map(([lenguaje, cantidad]) => ({ lenguaje, cantidad })).sort((a, b) => b.cantidad - a.cantidad || a.lenguaje.localeCompare(b.lenguaje));
 }
 
 /** Días consecutivos (hasta hoy o ayer) con al menos un análisis o intento. Fechas como "AAAA-MM-DD". */

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   conteoPorLenguaje,
+  dominioPonderado,
   dominioPorConcepto,
   estadoDe,
   normalizarConcepto,
@@ -107,5 +108,21 @@ describe("conteoPorLenguaje y rachaDias", () => {
     expect(rachaDias(["2026-10-07", "2026-10-06"], "2026-10-08")).toBe(2);
     expect(rachaDias(["2026-10-05"], "2026-10-08")).toBe(0);
     expect(rachaDias(["2026-03-01", "2026-02-28"], "2026-03-01")).toBe(2);
+  });
+});
+
+describe("dominioPonderado", () => {
+  it("coincide con la media ponderada d^(n-1-i) y da más peso a lo reciente", () => {
+    // pesos 0.6 (fallo) y 1 (acierto) → 1 / 1.6
+    expect(dominioPonderado([false, true])).toBe(62.5);
+    expect(dominioPonderado([true, false])).toBe(37.5);
+    const serie = [true, false, false, true, true];
+    const n = serie.length;
+    const esperado = serie.reduce((s, c, i) => s + (c ? 0.6 ** (n - 1 - i) : 0), 0) / serie.reduce((s, _c, i) => s + 0.6 ** (n - 1 - i), 0);
+    expect(dominioPonderado(serie)).toBe(Math.round(esperado * 1000) / 10);
+  });
+
+  it("sin respuestas es 0", () => {
+    expect(dominioPonderado([])).toBe(0);
   });
 });
