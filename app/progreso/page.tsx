@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { languageLabel } from "@/lib/language";
 import { UMBRAL_DOMINADO, UMBRAL_EN_PROGRESO, type ConceptoProgreso, type EstadoConcepto } from "@/lib/progreso";
-import { cn } from "@/lib/utils";
+import { cn, formatearFechaCorta } from "@/lib/utils";
 import { UMBRAL_APROBACION } from "@/schemas/quiz";
 import { obtenerProgreso } from "@/services/progreso.service";
 
@@ -110,7 +110,7 @@ export default async function ProgresoPage() {
                   <tbody>
                     {[...p.evolucion].reverse().map((e, i) => (
                       <tr key={i} className="border-t">
-                        <td className="py-1.5 pr-3 tabular-nums text-muted-foreground">{new Date(e.fecha).toLocaleDateString("es-CO")}</td>
+                        <td className="py-1.5 pr-3 tabular-nums text-muted-foreground">{formatearFechaCorta(e.fecha)}</td>
                         <td className="py-1.5 pr-3">
                           <Link href={`/analysis/${e.analisisId}`} className="hover:underline">
                             {e.titulo}

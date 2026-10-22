@@ -4,6 +4,7 @@ import { languageLabel } from "@/lib/language";
 import { NIVEL_INFO, type NivelUsuario } from "@/schemas/common";
 import { TIPO_PREGUNTA_INFO } from "@/schemas/quiz";
 import { DIAGRAMA_INFO, HALLAZGO_INFO, SEVERIDAD_INFO, type AnalisisVista } from "@/schemas/vista";
+import { formatearFechaCorta } from "@/lib/utils";
 
 const rango = (inicio: number | null, fin: number | null) => (inicio == null ? null : fin == null || fin === inicio ? `L${inicio}` : `L${inicio}–${fin}`);
 
@@ -45,7 +46,7 @@ export function VistaImpresion({ datos, titulo, nivel, creadoEn }: { datos: Anal
       <header className="space-y-1">
         <h1 className="vd-title text-3xl">{titulo}</h1>
         <p className="text-muted-foreground">
-          {languageLabel(datos.lenguaje)} · nivel {NIVEL_INFO[nivel].label.toLowerCase()} · {creadoEn.toLocaleDateString("es-CO")} · generado con VibeDecoder
+          {languageLabel(datos.lenguaje)} · nivel {NIVEL_INFO[nivel].label.toLowerCase()} · {formatearFechaCorta(creadoEn)} · generado con VibeDecoder
         </p>
       </header>
 

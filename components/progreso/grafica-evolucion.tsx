@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { LOCALE } from "@/lib/utils";
 
 export interface PuntoEvolucion {
   fecha: string;
@@ -10,8 +11,8 @@ export interface PuntoEvolucion {
 
 const ALTO = 220;
 const M = { arriba: 16, derecha: 16, abajo: 28, izquierda: 48 };
-const fechaCorta = new Intl.DateTimeFormat("es-CO", { day: "2-digit", month: "short" });
-const hora = new Intl.DateTimeFormat("es-CO", { hour: "2-digit", minute: "2-digit" });
+const fechaCorta = new Intl.DateTimeFormat(LOCALE, { day: "2-digit", month: "short" });
+const hora = new Intl.DateTimeFormat(LOCALE, { hour: "2-digit", minute: "2-digit" });
 
 /**
  * Evolución del puntaje del quiz (una sola serie: el título de la tarjeta la nombra, sin leyenda).

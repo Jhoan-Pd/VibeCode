@@ -14,7 +14,7 @@ import { Alert, Spinner, Tabs } from "@/components/ui/misc";
 import { useIsDark } from "@/hooks/use-is-dark";
 import { MAX_CODE_CHARS } from "@/lib/config";
 import type { EstadoCupo } from "@/lib/limites";
-import { cn } from "@/lib/utils";
+import { cn, formatearNumero } from "@/lib/utils";
 import type { NivelUsuario } from "@/schemas/common";
 
 const PESTANAS = [
@@ -47,7 +47,7 @@ export function AnalyzeForm({ nivelInicial, cupo }: { nivelInicial: NivelUsuario
         <div className="flex flex-wrap items-center justify-between gap-2 border-b p-3">
           <Tabs value={f.fuente} onChange={f.setFuente} items={PESTANAS} />
           <span className={cn("text-xs tabular-nums", excede ? "font-medium text-destructive" : "text-muted-foreground")} aria-live="polite">
-            {largo.toLocaleString("es-CO")} / {MAX_CODE_CHARS.toLocaleString("es-CO")} caracteres
+            {formatearNumero(largo)} / {formatearNumero(MAX_CODE_CHARS)} caracteres
           </span>
         </div>
 

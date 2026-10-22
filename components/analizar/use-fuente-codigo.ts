@@ -4,6 +4,7 @@ import { useDeferredValue, useMemo, useState } from "react";
 import { pedirJson } from "@/lib/client/api";
 import { MAX_CODE_CHARS } from "@/lib/config";
 import { detectLanguage, type LanguageId } from "@/lib/language";
+import { formatearNumero } from "@/lib/utils";
 
 export type Fuente = "pegar" | "archivo" | "gist";
 export interface GistArchivo {
@@ -46,7 +47,7 @@ export function useFuenteCodigo() {
     setError(null);
     // Un carácter ocupa hasta 4 bytes en UTF-8: por encima de eso seguro excede el máximo.
     if (file.size > MAX_CODE_CHARS * 4) {
-      setError(`El archivo es demasiado grande. El máximo son ${MAX_CODE_CHARS.toLocaleString("es-CO")} caracteres.`);
+      setError(`El archivo es demasiado grande. El máximo son ${formatearNumero(MAX_CODE_CHARS)} caracteres.`);
       return;
     }
     const texto = await file.text();

@@ -10,7 +10,7 @@ import { Alert } from "@/components/ui/misc";
 import { MAX_CODE_CHARS } from "@/lib/config";
 import type { EstadoCupo } from "@/lib/limites";
 import { LANGUAGES, languageLabel, lenguajeElegido, type LanguageId, type LanguageOrPlain } from "@/lib/language";
-import { cn } from "@/lib/utils";
+import { cn, formatearNumero } from "@/lib/utils";
 import type { NivelUsuario } from "@/schemas/common";
 
 export interface AjustesProps {
@@ -93,7 +93,7 @@ export function AjustesAnalisis(p: AjustesProps) {
         <p className={cn("text-center text-xs", p.cupo.restantes === 0 ? "text-destructive" : "text-muted-foreground")} aria-live="polite">
           {textoCupo(p.cupo)}
         </p>
-        {p.excede && <p className="text-xs text-destructive">Reduce el código a {MAX_CODE_CHARS.toLocaleString("es-CO")} caracteres o menos.</p>}
+        {p.excede && <p className="text-xs text-destructive">Reduce el código a {formatearNumero(MAX_CODE_CHARS)} caracteres o menos.</p>}
       </CardContent>
     </>
   );
