@@ -1,6 +1,7 @@
 import "server-only";
 import { Prisma } from "@/generated/prisma/client";
-import { esReutilizable } from "@/lib/cache";
+import { esReutilizable, type CandidatoCache } from "@/lib/cache";
+import { omitir } from "@/lib/colecciones";
 import { db } from "@/lib/db";
 import { PROMPT_VERSION } from "@/lib/prompts";
 
@@ -13,6 +14,23 @@ const INCLUIR_TODO = {
 } satisfies Prisma.AnalisisInclude;
 
 type AnalisisCompleto = Prisma.AnalisisGetPayload<{ include: typeof INCLUIR_TODO }>;
+
+/** Qué tiene guardado un análisis, en el formato que evalúa `esReutilizable` (lógica pura en lib/cache). */
+function comoCandidato(a: AnalisisCompleto): CandidatoCache {
+  return {
+    estado: a.estado,
+    versionPrompts: a.versionPrompts,
+    tieneResumen: a.resumen !== null,
+    bloques: a.explicaciones.length,
+    diagramaFlujo: a.diagramas.some((d) => d.tipo === "FLUJO"),
+    conceptos: a.conceptos.length,
+    auditado: a.auditadoEn !== null,
+    preguntas: a.quizzes[0]?.preguntas.length ?? 0,
+  };
+}
+
+/** Claves de una fila hija que no se copian: la identidad y el vínculo con el análisis de origen. */
+const IDENTIDAD = ["id", "analisisId"] as const;
 
 /**
  * Busca un análisis ya hecho con el mismo hash (código + nivel). Prefiere uno del propio usuario
@@ -37,21 +55,7 @@ export async function buscarEnCache(hash: string, usuarioId: string): Promise<An
     include: INCLUIR_TODO,
   });
 
-  const validos = candidatos.filter((a) =>
-    esReutilizable(
-      {
-        estado: a.estado,
-        versionPrompts: a.versionPrompts,
-        tieneResumen: a.resumen !== null,
-        bloques: a.explicaciones.length,
-        diagramaFlujo: a.diagramas.some((d) => d.tipo === "FLUJO"),
-        conceptos: a.conceptos.length,
-        auditado: a.auditadoEn !== null,
-        preguntas: a.quizzes[0]?.preguntas.length ?? 0,
-      },
-      PROMPT_VERSION,
-    ),
-  );
+  const validos = candidatos.filter((a) => esReutilizable(comoCandidato(a), PROMPT_VERSION));
   return validos.find((a) => a.usuarioId === usuarioId) ?? validos[0] ?? null;
 }
 
@@ -76,36 +80,18 @@ export async function clonarAnalisis(origen: AnalisisCompleto, usuarioId: string
       versionPrompts: origen.versionPrompts,
       auditadoEn: origen.auditadoEn,
       origenCacheId: origen.origenCacheId ?? origen.id,
-      explicaciones: {
-        create: origen.explicaciones.map(({ orden, lineaInicio, lineaFin, titulo: t, explicacion }) => ({ orden, lineaInicio, lineaFin, titulo: t, explicacion })),
-      },
-      diagramas: { create: origen.diagramas.map(({ tipo, titulo: t, codigoMermaid }) => ({ tipo, titulo: t, codigoMermaid })) },
-      conceptos: { create: origen.conceptos.map(({ nombre, explicacion, lineaInicio, lineaFin }) => ({ nombre, explicacion, lineaInicio, lineaFin })) },
-      hallazgos: {
-        create: origen.hallazgos.map(({ tipo, severidad, titulo: t, descripcion, sugerencia, lineaInicio, lineaFin }) => ({
-          tipo,
-          severidad,
-          titulo: t,
-          descripcion,
-          sugerencia,
-          lineaInicio,
-          lineaFin,
-        })),
-      },
+      explicaciones: { create: origen.explicaciones.map((e) => omitir(e, IDENTIDAD)) },
+      diagramas: { create: origen.diagramas.map((d) => omitir(d, [...IDENTIDAD, "creadoEn"])) },
+      conceptos: { create: origen.conceptos.map((c) => omitir(c, IDENTIDAD)) },
+      hallazgos: { create: origen.hallazgos.map((h) => omitir(h, IDENTIDAD)) },
       quizzes: quiz
         ? {
             create: {
               preguntas: {
-                create: quiz.preguntas.map(({ orden, tipo, enunciado, opciones, respuestaCorrecta, explicacion, lineaInicio, lineaFin, concepto }) => ({
-                  orden,
-                  tipo,
-                  enunciado,
-                  opciones: opciones ?? Prisma.DbNull,
-                  respuestaCorrecta: respuestaCorrecta as Prisma.InputJsonValue,
-                  explicacion,
-                  lineaInicio,
-                  lineaFin,
-                  concepto,
+                create: quiz.preguntas.map((p) => ({
+                  ...omitir(p, ["id", "quizId"]),
+                  opciones: p.opciones ?? Prisma.DbNull,
+                  respuestaCorrecta: p.respuestaCorrecta as Prisma.InputJsonValue,
                 })),
               },
             },
