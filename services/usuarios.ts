@@ -6,8 +6,17 @@ import type { PerfilInput, RegisterInput } from "@/schemas/auth";
 /** bcryptjs (JS puro) funciona en cualquier runtime serverless sin compilar módulos nativos. */
 const COSTO_BCRYPT = 12;
 
-// Hash de relleno para igualar tiempos cuando el correo no existe (evita enumerar usuarios por latencia).
-const HASH_RELLENO = bcrypt.hashSync("relleno-no-valido", COSTO_BCRYPT);
+/**
+ * Hash de relleno para igualar tiempos cuando el correo no existe (evita enumerar usuarios por latencia).
+ * Se calcula la primera vez que se necesita (y una sola vez): con costo 12 tarda cientos de ms, y
+ * hacerlo al importar el módulo bloqueaba el arranque en frío de cualquier ruta que lo importara.
+ */
+let hashRelleno: Promise<string> | null = null;
+const obtenerHashRelleno = () => (hashRelleno ??= bcrypt.hash("relleno-no-valido", COSTO_BCRYPT));
+
+/** Código de Prisma para una restricción única violada. */
+const VIOLACION_UNICA = "P2002";
+const esViolacionUnica = (e: unknown) => typeof e === "object" && e !== null && "code" in e && e.code === VIOLACION_UNICA;
 
 export class EmailEnUsoError extends Error {
   constructor() {
@@ -20,16 +29,22 @@ export async function registrarUsuario(input: RegisterInput) {
   const existente = await db.usuario.findUnique({ where: { email: input.email }, select: { id: true } });
   if (existente) throw new EmailEnUsoError();
   const passwordHash = await bcrypt.hash(input.password, COSTO_BCRYPT);
-  return db.usuario.create({
-    data: { nombre: input.nombre, email: input.email, passwordHash },
-    select: { id: true, email: true, nombre: true },
-  });
+  try {
+    return await db.usuario.create({
+      data: { nombre: input.nombre, email: input.email, passwordHash },
+      select: { id: true, email: true, nombre: true },
+    });
+  } catch (e) {
+    // Dos registros simultáneos con el mismo correo pasan la comprobación previa: la BD decide.
+    if (esViolacionUnica(e)) throw new EmailEnUsoError();
+    throw e;
+  }
 }
 
 /** Verifica credenciales. Devuelve el usuario o null (sin revelar si falló el correo o la clave). */
 export async function verificarCredenciales(email: string, password: string) {
   const usuario = await db.usuario.findUnique({ where: { email } });
-  const hash = usuario?.passwordHash ?? HASH_RELLENO;
+  const hash = usuario?.passwordHash ?? (await obtenerHashRelleno());
   const ok = await bcrypt.compare(password, hash);
   if (!usuario || !usuario.passwordHash || !ok) return null;
   return usuario;
