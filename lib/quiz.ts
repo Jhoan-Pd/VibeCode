@@ -1,4 +1,5 @@
 import { unicosPor } from "@/lib/colecciones";
+import { recortarRango } from "@/lib/rango";
 import {
   UMBRAL_APROBACION,
   type NivelComprension,
@@ -65,27 +66,16 @@ export function invertirPermutacion(p: readonly number[]): number[] {
 
 export type PreguntaNueva = Omit<PreguntaGuardada, "id">;
 
-/** Recorta el rango al archivo (o lo anula si queda fuera): el LLM suele equivocarse por una línea. */
-function rangoSeguro(a: number | null | undefined, b: number | null | undefined, total: number): [number | null, number | null] {
-  const ini = a ?? b ?? null;
-  const fin = b ?? a ?? null;
-  if (ini == null || fin == null) return [null, null];
-  const x = Math.min(ini, fin);
-  const y = Math.max(ini, fin);
-  if (x > total || y < 1) return [null, null];
-  return [Math.max(1, x), Math.min(total, y)];
-}
-
 export function prepararPreguntas(preguntas: PreguntaLLM[], totalLineas = Number.POSITIVE_INFINITY): PreguntaNueva[] {
   return preguntas.map((p, orden) => {
-    const [lineaInicio, lineaFin] = rangoSeguro(p.lineaInicio, p.lineaFin, totalLineas);
+    const rango = recortarRango(p.lineaInicio, p.lineaFin, totalLineas);
     const comun = {
       orden,
       tipo: p.tipo,
       enunciado: p.enunciado,
       explicacion: p.explicacion,
-      lineaInicio,
-      lineaFin,
+      lineaInicio: rango?.inicio ?? null,
+      lineaFin: rango?.fin ?? null,
       concepto: p.concepto?.trim() || null,
     };
     switch (p.tipo) {
