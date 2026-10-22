@@ -3,7 +3,7 @@ import { z } from "zod";
 import { Prisma } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import { calificar } from "@/lib/quiz";
-import { RespuestaValorSchema, aPreguntaPublica, type IntentoRequest, type PreguntaGuardada, type ResultadoQuiz, type TipoPregunta } from "@/schemas/quiz";
+import { RespuestaValorSchema, aPreguntaPublica, type IntentoRequest, type PreguntaGuardada, type ResultadoQuiz } from "@/schemas/quiz";
 import type { QuizVista } from "@/schemas/vista";
 
 const OpcionesSchema = z.array(z.string()).nullable();
@@ -15,7 +15,7 @@ export function aPreguntaGuardada(p: PreguntaBD): PreguntaGuardada {
   return {
     id: p.id,
     orden: p.orden,
-    tipo: p.tipo as TipoPregunta,
+    tipo: p.tipo,
     enunciado: p.enunciado,
     opciones: OpcionesSchema.catch(null).parse(p.opciones ?? null),
     respuestaCorrecta: RespuestaValorSchema.catch(-1).parse(p.respuestaCorrecta),
