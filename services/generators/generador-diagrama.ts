@@ -1,10 +1,7 @@
-import { dividirLineas, numerarLineas } from "@/lib/chunking";
-import { generateJson } from "@/lib/llm/json";
 import { normalizarMermaid, validarMermaidBasico, type TipoMermaid } from "@/lib/mermaid";
-import { SISTEMA_BASE, promptDiagrama, promptDiagramasEstructurales, promptRepararDiagrama } from "@/lib/prompts";
+import { promptDiagrama, promptDiagramasEstructurales, promptRepararDiagrama } from "@/lib/prompts";
 import { DiagramaSchema, DiagramasEstructuralesSchema, type DiagramaLLM } from "@/schemas/analysis";
-import { GeneradorBase } from "./generador-base";
-import type { EntradaCodigo } from "./generador-explicacion";
+import { GeneradorBase, type EntradaCodigo } from "./generador-base";
 
 export interface DiagramaGenerado extends DiagramaLLM {
   tipo: TipoMermaid;
@@ -18,56 +15,49 @@ export interface DiagramaGenerado extends DiagramaLLM {
  */
 export class GeneradorDiagrama extends GeneradorBase {
   async generarFlujo(entrada: EntradaCodigo): Promise<DiagramaGenerado> {
-    const { data } = await generateJson({
-      provider: this.provider,
-      system: SISTEMA_BASE,
-      prompt: promptDiagrama({
-        codigoNumerado: numerarLineas(dividirLineas(entrada.codigo)),
-        lenguaje: entrada.lenguaje,
-        nivel: entrada.nivel,
-      }),
+    const data = await this.consultar({
+      prompt: promptDiagrama(this.preparar(entrada)),
       schema: DiagramaSchema,
       validate: (d) => validarMermaidBasico(normalizarMermaid(d.mermaid)),
       maxOutputTokens: 4096,
     });
-    return { tipo: "FLUJO", titulo: data.titulo, mermaid: normalizarMermaid(data.mermaid) };
+    return diagrama("FLUJO", data);
   }
 
   /** Diagramas de clases y de secuencia (0, 1 o 2 según el código). */
   async generarEstructurales(entrada: EntradaCodigo): Promise<DiagramaGenerado[]> {
-    const { data } = await generateJson({
-      provider: this.provider,
-      system: SISTEMA_BASE,
-      prompt: promptDiagramasEstructurales({
-        codigoNumerado: numerarLineas(dividirLineas(entrada.codigo)),
-        lenguaje: entrada.lenguaje,
-        nivel: entrada.nivel,
-      }),
+    const data = await this.consultar({
+      prompt: promptDiagramasEstructurales(this.preparar(entrada)),
       schema: DiagramasEstructuralesSchema,
-      validate: (d) => [
-        ...(d.clases ? validarMermaidBasico(normalizarMermaid(d.clases.mermaid, "CLASES"), "CLASES").map((p) => `clases: ${p}`) : []),
-        ...(d.secuencia ? validarMermaidBasico(normalizarMermaid(d.secuencia.mermaid, "SECUENCIA"), "SECUENCIA").map((p) => `secuencia: ${p}`) : []),
-      ],
+      validate: (d) => [...problemas("CLASES", d.clases), ...problemas("SECUENCIA", d.secuencia)],
       maxOutputTokens: 6144,
     });
-    const resultado: DiagramaGenerado[] = [];
-    if (data.clases) resultado.push({ tipo: "CLASES", titulo: data.clases.titulo, mermaid: normalizarMermaid(data.clases.mermaid, "CLASES") });
-    if (data.secuencia) {
-      resultado.push({ tipo: "SECUENCIA", titulo: data.secuencia.titulo, mermaid: normalizarMermaid(data.secuencia.mermaid, "SECUENCIA") });
-    }
-    return resultado;
+    const candidatos: [TipoMermaid, DiagramaLLM | null][] = [
+      ["CLASES", data.clases],
+      ["SECUENCIA", data.secuencia],
+    ];
+    return candidatos.flatMap(([tipo, d]) => (d ? [diagrama(tipo, d)] : []));
   }
 
   /** Pide al LLM corregir un diagrama que el parser del cliente rechazó. */
   async reparar(mermaid: string, error: string, tipo: TipoMermaid = "FLUJO"): Promise<DiagramaGenerado> {
-    const { data } = await generateJson({
-      provider: this.provider,
-      system: SISTEMA_BASE,
+    const data = await this.consultar({
       prompt: promptRepararDiagrama({ mermaid, error, tipo }),
       schema: DiagramaSchema,
       validate: (d) => validarMermaidBasico(normalizarMermaid(d.mermaid, tipo), tipo),
       maxOutputTokens: 4096,
     });
-    return { tipo, titulo: data.titulo, mermaid: normalizarMermaid(data.mermaid, tipo) };
+    return diagrama(tipo, data);
   }
+}
+
+/** Diagrama listo para guardar: el Mermaid se normaliza según su tipo. */
+function diagrama(tipo: TipoMermaid, d: DiagramaLLM): DiagramaGenerado {
+  return { tipo, titulo: d.titulo, mermaid: normalizarMermaid(d.mermaid, tipo) };
+}
+
+/** Problemas de un diagrama opcional, prefijados con su tipo para que el reintento sepa cuál corregir. */
+function problemas(tipo: TipoMermaid, d: DiagramaLLM | null | undefined): string[] {
+  if (!d) return [];
+  return validarMermaidBasico(normalizarMermaid(d.mermaid, tipo), tipo).map((p) => `${tipo.toLowerCase()}: ${p}`);
 }

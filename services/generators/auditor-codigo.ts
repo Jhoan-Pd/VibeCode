@@ -1,9 +1,6 @@
-import { dividirLineas, numerarLineas } from "@/lib/chunking";
-import { generateJson } from "@/lib/llm/json";
-import { SISTEMA_BASE, promptAuditoria } from "@/lib/prompts";
+import { promptAuditoria } from "@/lib/prompts";
 import { AuditoriaSchema, SEVERIDADES, type HallazgoLLM } from "@/schemas/analysis";
-import { GeneradorBase } from "./generador-base";
-import type { EntradaCodigo } from "./generador-explicacion";
+import { GeneradorBase, type EntradaCodigo } from "./generador-base";
 import { ajustarRango, type normalizarRango } from "./validacion";
 
 export type Hallazgo = ReturnType<typeof normalizarRango<HallazgoLLM>>;
@@ -18,20 +15,9 @@ export const PESO_SEVERIDAD: Record<(typeof SEVERIDADES)[number], number> = { CR
  */
 export class AuditorCodigo extends GeneradorBase {
   async auditar(entrada: EntradaCodigo): Promise<Hallazgo[]> {
-    const lineas = dividirLineas(entrada.codigo);
-    const { data } = await generateJson({
-      provider: this.provider,
-      system: SISTEMA_BASE,
-      prompt: promptAuditoria({
-        codigoNumerado: numerarLineas(lineas),
-        lenguaje: entrada.lenguaje,
-        nivel: entrada.nivel,
-        totalLineas: lineas.length,
-      }),
-      schema: AuditoriaSchema,
-      maxOutputTokens: 6144,
-    });
-    return ordenarHallazgos(data.hallazgos.map((h) => ajustarRango(h, lineas.length)));
+    const codigo = this.preparar(entrada);
+    const data = await this.consultar({ prompt: promptAuditoria(codigo), schema: AuditoriaSchema, maxOutputTokens: 6144 });
+    return ordenarHallazgos(data.hallazgos.map((h) => ajustarRango(h, codigo.totalLineas)));
   }
 }
 

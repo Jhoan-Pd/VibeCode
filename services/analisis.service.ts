@@ -10,7 +10,8 @@ import type { TipoMermaid } from "@/lib/mermaid";
 import { ETAPAS, type AnalyzeRequest, type Etapa } from "@/schemas/analysis";
 import { AuditorCodigo } from "./generators/auditor-codigo";
 import { GeneradorDiagrama } from "./generators/generador-diagrama";
-import { GeneradorExplicacion, type EntradaCodigo } from "./generators/generador-explicacion";
+import type { EntradaCodigo } from "./generators/generador-base";
+import { GeneradorExplicacion } from "./generators/generador-explicacion";
 import { GeneradorQuiz } from "./generators/generador-quiz";
 
 type Emitir = (evento: AnalysisEvent) => void;
