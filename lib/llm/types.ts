@@ -1,3 +1,5 @@
+import { ErrorVisible } from "@/lib/errores";
+
 /**
  * Capa de abstracción de proveedores LLM.
  * El resto de la app SOLO conoce esta interfaz: cambiar de Gemini a Groq (Fase 3)
@@ -53,6 +55,7 @@ export class LLMError extends Error {
 
 /** Mensaje seguro para mostrar al usuario (nunca incluye claves ni detalles internos). */
 export function mensajeAmigable(error: unknown): string {
+  if (error instanceof ErrorVisible) return error.message;
   if (error instanceof LLMError) {
     switch (error.code) {
       case "RATE_LIMIT":
