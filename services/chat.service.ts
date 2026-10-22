@@ -1,4 +1,5 @@
 import "server-only";
+import type { Prisma } from "@/generated/prisma/client";
 import { contextoChat, limpiarRespuestaChat } from "@/lib/chat";
 import { db } from "@/lib/db";
 import { LLMError, type LLMProvider } from "@/lib/llm/types";
@@ -9,7 +10,9 @@ import type { ChatRequest, MensajeChatVista } from "@/schemas/chat";
 /** Mensajes previos que se envían como contexto (los más recientes). */
 const HISTORIAL_MAX = 8;
 
-function aVista(m: { id: string; rol: "USUARIO" | "ASISTENTE"; contenido: string; lineaInicio: number | null; lineaFin: number | null; creadoEn: Date }): MensajeChatVista {
+type MensajeBD = Prisma.MensajeChatGetPayload<object>;
+
+function aVista(m: MensajeBD): MensajeChatVista {
   return { id: m.id, rol: m.rol, contenido: m.contenido, lineaInicio: m.lineaInicio, lineaFin: m.lineaFin, creadoEn: m.creadoEn.toISOString() };
 }
 
@@ -63,17 +66,25 @@ export async function responder(provider: LLMProvider, analisisId: string, usuar
   const contenido = limpiarRespuestaChat(respuesta.text);
   if (!contenido) throw new LLMError("Respuesta vacía en el chat", "BAD_RESPONSE");
 
-  const lineaInicio = ctx.seleccion?.inicio ?? null;
-  const lineaFin = ctx.seleccion?.fin ?? null;
+  return guardarIntercambio({ analisisId, usuarioId, pregunta: peticion.mensaje, respuesta: contenido, seleccion: ctx.seleccion });
+}
+
+/** Guarda pregunta y respuesta juntas (transacción): o quedan las dos, o ninguna. */
+async function guardarIntercambio(i: {
+  analisisId: string;
+  usuarioId: string;
+  pregunta: string;
+  respuesta: string;
+  seleccion: { inicio: number; fin: number } | null;
+}): Promise<MensajeChatVista[]> {
+  const base = { analisisId: i.analisisId, usuarioId: i.usuarioId, lineaInicio: i.seleccion?.inicio ?? null, lineaFin: i.seleccion?.fin ?? null };
   const ahora = Date.now();
-  const [pregunta, contestacion] = await db.$transaction([
-    db.mensajeChat.create({
-      data: { analisisId, usuarioId, rol: "USUARIO", contenido: peticion.mensaje, lineaInicio, lineaFin, creadoEn: new Date(ahora) },
-    }),
+  const guardados = await db.$transaction([
+    db.mensajeChat.create({ data: { ...base, rol: "USUARIO", contenido: i.pregunta, creadoEn: new Date(ahora) } }),
     // +1 ms garantiza el orden pregunta → respuesta al listar por fecha.
-    db.mensajeChat.create({ data: { analisisId, usuarioId, rol: "ASISTENTE", contenido, lineaInicio, lineaFin, creadoEn: new Date(ahora + 1) } }),
+    db.mensajeChat.create({ data: { ...base, rol: "ASISTENTE", contenido: i.respuesta, creadoEn: new Date(ahora + 1) } }),
   ]);
-  return [aVista(pregunta), aVista(contestacion)];
+  return guardados.map(aVista);
 }
 
 export async function borrarConversacion(analisisId: string, usuarioId: string) {
