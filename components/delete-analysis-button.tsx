@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { pedirJson } from "@/lib/client/api";
 import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/misc";
@@ -13,16 +14,12 @@ export function DeleteAnalysisButton({ id, redirigirA }: { id: string; redirigir
 
   async function borrar() {
     setCargando(true);
-    try {
-      const res = await fetch(`/api/analysis/${id}`, { method: "DELETE" });
-      if (res.ok) {
-        if (redirigirA) router.push(redirigirA);
-        router.refresh();
-      }
-    } finally {
-      setCargando(false);
-      setConfirmando(false);
-    }
+    const r = await pedirJson(`/api/analysis/${id}`, { metodo: "DELETE", errorPorDefecto: "No se pudo eliminar." });
+    setCargando(false);
+    setConfirmando(false);
+    if (!r.ok) return;
+    if (redirigirA) router.push(redirigirA);
+    router.refresh();
   }
 
   if (!confirmando) {
