@@ -1,9 +1,9 @@
 import type { AnalysisEvent } from "@/lib/analysis-events";
-import { jsonError, requerirUsuario } from "@/lib/api";
+import { conUsuario, jsonError, leerCuerpo } from "@/lib/api";
 import { db } from "@/lib/db";
 import { hashCodigo } from "@/lib/hash";
 import { mensajeLimite } from "@/lib/limites";
-import { getLLMProvider, mensajeAmigable } from "@/lib/llm";
+import { mensajeAmigable, proveedorDisponible } from "@/lib/llm";
 import { AnalyzeRequestSchema } from "@/schemas/analysis";
 import { AnalisisService, resolverMetadatos } from "@/services/analisis.service";
 import { buscarEnCache, clonarAnalisis } from "@/services/cache.service";
@@ -28,45 +28,39 @@ const CABECERAS_STREAM = {
  *  3) límite diario (atómico en BD),
  *  4) análisis con el LLM (la API key solo existe aquí, en el servidor).
  */
-export async function POST(req: Request) {
-  const sesion = await requerirUsuario();
-  if ("respuesta" in sesion) return sesion.respuesta;
+/** Respuesta NDJSON ya completa (resultado desde la caché: no hay nada que esperar). */
+function respuestaNdjson(eventos: AnalysisEvent[]) {
+  return new Response(eventos.map((e) => JSON.stringify(e)).join("\n") + "\n", { headers: CABECERAS_STREAM });
+}
 
-  const body = await req.json().catch(() => null);
-  const parsed = AnalyzeRequestSchema.safeParse(body);
-  if (!parsed.success) {
-    return jsonError(parsed.error.issues[0]?.message ?? "Datos no válidos", 400);
-  }
-  const input = parsed.data;
+export const POST = conUsuario(async ({ req, usuarioId }) => {
+  const cuerpo = await leerCuerpo(req, AnalyzeRequestSchema);
+  if ("respuesta" in cuerpo) return cuerpo.respuesta;
+  const input = cuerpo.datos;
 
   // ---- 2) Caché ----
   if (!input.forzar) {
-    const origen = await buscarEnCache(hashCodigo(input.codigo, input.nivel), sesion.userId);
+    const origen = await buscarEnCache(hashCodigo(input.codigo, input.nivel), usuarioId);
     if (origen) {
-      const id =
-        origen.usuarioId === sesion.userId ? origen.id : (await clonarAnalisis(origen, sesion.userId, resolverMetadatos(input).titulo)).id;
-      const eventos: AnalysisEvent[] = [
+      const id = origen.usuarioId === usuarioId ? origen.id : (await clonarAnalisis(origen, usuarioId, resolverMetadatos(input).titulo)).id;
+      return respuestaNdjson([
         { type: "start", analisisId: id },
         { type: "done", analisisId: id, estado: "COMPLETO", desdeCache: true },
-      ];
-      return new Response(eventos.map((e) => JSON.stringify(e)).join("\n") + "\n", { headers: CABECERAS_STREAM });
+      ]);
     }
   }
 
   // ---- 3) Límite diario ----
-  let servicio: AnalisisService;
-  try {
-    servicio = new AnalisisService(getLLMProvider());
-  } catch (e) {
-    console.error("[analyze] proveedor LLM no disponible:", e);
-    return jsonError(mensajeAmigable(e), 503);
-  }
+  const llm = proveedorDisponible();
+  if ("error" in llm) return jsonError(llm.error, 503);
+  const servicio = new AnalisisService(llm.proveedor);
 
-  const cupo = await consumir(sesion.userId, "analisis");
+  // Aquí no sirve conCupo: el análisis sigue dentro del stream, después de responder.
+  const cupo = await consumir(usuarioId, "analisis");
   if (!cupo.ok) return jsonError(mensajeLimite("analisis", cupo.limite), 429);
 
   // ---- 4) Análisis con el LLM ----
-  const analisis = await servicio.crear(sesion.userId, input);
+  const analisis = await servicio.crear(usuarioId, input);
 
   const encoder = new TextEncoder();
   const stream = new ReadableStream<Uint8Array>({
@@ -85,13 +79,13 @@ export async function POST(req: Request) {
       try {
         const estado = await servicio.ejecutar(analisis.id, emitir);
         // Si fallaron todas las etapas (p. ej. el proveedor de IA está caído), no se cobra el cupo.
-        if (estado === "ERROR") await devolver(sesion.userId, "analisis").catch(() => {});
+        if (estado === "ERROR") await devolver(usuarioId, "analisis").catch(() => {});
       } catch (e) {
         console.error("[analyze] fallo inesperado:", e);
         await db.analisis
           .update({ where: { id: analisis.id }, data: { estado: "ERROR", errorMensaje: mensajeAmigable(e) } })
           .catch(() => {});
-        await devolver(sesion.userId, "analisis").catch(() => {});
+        await devolver(usuarioId, "analisis").catch(() => {});
         emitir({ type: "error", message: mensajeAmigable(e) });
       } finally {
         if (abierto) controller.close();
@@ -103,4 +97,4 @@ export async function POST(req: Request) {
   });
 
   return new Response(stream, { headers: CABECERAS_STREAM });
-}
+});
